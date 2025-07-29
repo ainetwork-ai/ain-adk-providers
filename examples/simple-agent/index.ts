@@ -1,11 +1,10 @@
 import "dotenv/config";
 
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { AzureOpenAI } from "../../packages/models/azure";
-import { GeminiModel } from "../../packages/models/gemini";
+import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
+import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { InMemoryMemory } from "../../packages/memory/inmemory";
-// import { MongoDBMemory } from "../../packages/memory/mongodb";
+import { InMemoryMemory } from "@ainetwork/adk-provider-memory-inmemory";
 import { AINAgent } from "@ainetwork/adk";
 
 const PORT = Number(process.env.PORT) || 9100;
@@ -40,8 +39,6 @@ async function main() {
 
 	const inMemoryMemory = new InMemoryMemory();
 	const memoryModule = new MemoryModule(inMemoryMemory);
-	// const mongodbMemory = new MongoDBMemory(process.env.MONGODB_URI!);
-	// const memoryModule = new MemoryModule(mongodbMemory);
 
 	const systemPrompt = `
 You are a highly sophisticated automated agent that can answer user queries by utilizing various tools and resources.

@@ -1,6 +1,6 @@
 # AINetwork ADK Providers
 
-This monorepo contains official and community-driven provider packages for the [AINetwork Agent Development Kit (ADK)](https://github.com/ainetwork/ain-adk). These packages extend the capabilities of ADK agents by enabling them to connect to various Large Language Models (LLMs) and memory/database systems.
+This monorepo contains official and community-driven provider packages for the [AINetwork Agent Development Kit (ADK)](https://github.com/ainetwork-ai/ain-adk). These packages extend the capabilities of ADK agents by enabling them to connect to various Large Language Models (LLMs) and memory/database systems.
 
 ## Packages
 
@@ -18,6 +18,12 @@ This repository is managed using [Lerna](https://lerna.js.org/) and [Yarn Worksp
 
 ## Getting Started
 
+To see how to use this package in your project, check out our comprehensive examples:
+
+👉 **[View Examples](https://github.com/ainetwork-ai/ain-adk-providers/tree/main/examples)**
+
+## Development
+
 ### Prerequisites
 
 -   [Node.js](https://nodejs.org/) (v20 or higher)
@@ -32,8 +38,6 @@ git clone https://github.com/ainetwork/ain-adk-providers.git
 cd ain-adk-providers
 yarn install
 ```
-
-## Development
 
 ### Available Scripts
 

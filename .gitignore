@@ -5,3 +5,5 @@ packages/**/yarn.lock
 examples/**/yarn.lock
 
 .env
+
+lerna-debug.log

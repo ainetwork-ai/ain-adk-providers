@@ -1,11 +1,11 @@
 {
   "name": "@ainetwork/adk-provider-model-azure",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "author": "AI Network (https://ainetwork.ai)",
-  "type": "module",
-  "engines": {
-    "node": ">=20"
-  },
+	"type": "module",
+	"engines": {
+		"node": ">=20"
+	},
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -27,5 +27,8 @@
   "devDependencies": {
     "typescript": "^5.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

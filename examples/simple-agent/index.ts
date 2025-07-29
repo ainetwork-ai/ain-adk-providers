@@ -1,10 +1,10 @@
 import "dotenv/config";
 
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { AzureOpenAI } from "../../packages/models/azure/dist";
-import { GeminiModel } from "../../packages/models/gemini/dist";
+import { AzureOpenAI } from "../../packages/models/azure";
+import { GeminiModel } from "../../packages/models/gemini";
 import { MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-// import { InMemoryMemory } from "../src/modules/memory/inmemory.js";
+import { InMemoryMemory } from "../../packages/memory/inmemory";
 // import { MongoDBMemory } from "../../packages/memory/mongodb";
 import { AINAgent } from "@ainetwork/adk";
 
@@ -38,8 +38,8 @@ async function main() {
 		},
 	});
 
-	// const inMemoryMemory = new InMemoryMemory();
-	// const memoryModule = new MemoryModule(inMemoryMemory);
+	const inMemoryMemory = new InMemoryMemory();
+	const memoryModule = new MemoryModule(inMemoryMemory);
 	// const mongodbMemory = new MongoDBMemory(process.env.MONGODB_URI!);
 	// const memoryModule = new MemoryModule(mongodbMemory);
 

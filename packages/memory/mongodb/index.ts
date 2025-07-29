@@ -1,12 +1,12 @@
-import { BaseMemory } from "@ainetwork/adk/modules/memory/base.memory.js";
-import type { ChatObject, SessionObject } from "@ainetwork/adk/types/memory.js";
-import { loggers } from "@ainetwork/adk/utils/logger.js";
+import { BaseMemory } from "@ainetwork/adk/modules/memory/base.memory";
+import type { ChatObject, SessionObject } from "@ainetwork/adk/types/memory";
+import { loggers } from "@ainetwork/adk/utils/logger";
 import mongoose from "mongoose";
 import {
 	type ChatDocument,
 	ChatModel,
 	ChatRole,
-} from "./models/chats.model.js";
+} from "./models/chats.model";
 
 export class MongoDBMemory extends BaseMemory {
 	private isConnected = false;

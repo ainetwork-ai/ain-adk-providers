@@ -1,14 +1,22 @@
 {
   "name": "@ainetwork/adk-provider-memory-mongodb",
   "version": "0.1.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.0.2",
+    "@ainetwork/adk": "^0.1.0",
     "mongoose": "^8.16.5"
   },
   "devDependencies": {

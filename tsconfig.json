@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"module": "es2022",
+		"moduleResolution": "bundler",
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"strict": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"skipLibCheck": true,
+		"baseUrl": ".",
+		"allowSyntheticDefaultImports": true,
+	},
+	"ts-node": {
+		"esm": true
+	},
+	"exclude": ["node_modules", "examples", "dist"]
+}

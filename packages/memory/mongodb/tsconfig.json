@@ -1,9 +1,9 @@
 {
-  "extends": "../../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./"
-  },
-  "include": ["index.ts", "models/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+	"extends": "../../../tsconfig.json",
+	"compilerOptions": {
+		"outDir": "./dist",
+		"rootDir": ".",
+	},
+	"include": ["index.ts", "models/**/*.ts"],
+	"exclude": ["node_modules", "dist"]
 }

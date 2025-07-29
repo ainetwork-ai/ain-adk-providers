@@ -1,13 +1,13 @@
-import { BaseModel } from "@ainetwork/adk/modules/models/base.model.js";
-import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory.js";
+import { BaseModel } from "@ainetwork/adk/modules/models/base.model";
+import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
 import type {
 	FetchResponse,
 	IA2ATool,
 	IAgentTool,
 	IMCPTool,
 	ToolCall,
-} from "@ainetwork/adk/types/tool.js";
-import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool.js";
+} from "@ainetwork/adk/types/tool";
+import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool";
 import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,

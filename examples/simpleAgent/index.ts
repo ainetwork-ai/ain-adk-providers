@@ -1,21 +1,14 @@
 import "dotenv/config";
-import { readFile } from "fs/promises";
 
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { AzureOpenAI } from "../../packages/models/azure";
-import { GeminiModel } from "../../packages/models/gemini";
+import { AzureOpenAI } from "../../packages/models/azure/dist";
+import { GeminiModel } from "../../packages/models/gemini/dist";
 import { MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
 // import { InMemoryMemory } from "../src/modules/memory/inmemory.js";
-import { MongoDBMemory } from "../../packages/memory/mongodb";
-import { AinAgentManifest } from "@ainetwork/adk/types/agent";
+// import { MongoDBMemory } from "../../packages/memory/mongodb";
 import { AINAgent } from "@ainetwork/adk";
 
 const PORT = Number(process.env.PORT) || 9100;
-
-async function readFileAsync(path: string): Promise<string> {
-	const content: string = await readFile(path, 'utf-8');
-	return content;
-}
 
 async function main() {
 	const modelModule = new ModelModule();
@@ -50,8 +43,47 @@ async function main() {
 	// const mongodbMemory = new MongoDBMemory(process.env.MONGODB_URI!);
 	// const memoryModule = new MemoryModule(mongodbMemory);
 
-	const systemPrompt = await readFileAsync("./examples/sampleSystem.prompt");
-	const manifest: AinAgentManifest = {
+	const systemPrompt = `
+You are a highly sophisticated automated agent that can answer user queries by utilizing various tools and resources.
+
+There is a selection of tools that let you perform actions or retrieve helpful context to answer the user's question.
+You can call tools repeatedly to take actions or gather as much context as needed until you have completed the task fully.
+
+Don't give up unless you are sure the request cannot be fulfilled with the tools you have.
+It's YOUR RESPONSIBILITY to make sure that you have done all you can to collect necessary context.
+
+If you are not sure about content or context pertaining to the user's request, use your tools to read data and gather the relevant information: do NOT guess or make up an answer.
+Be THOROUGH when gathering information. Make sure you have the FULL picture before replying. Use additional tool calls or clarifying questions as needed.
+
+Don't try to answer the user's question directly.
+First break down the user's request into smaller concepts and think about the kinds of tools and queries you need to grasp each concept.
+
+There are two <tool_type> for tools: MCP_Tool and A2A_Tool.
+The tool type can be identified by the presence of "[Bot Called <tool_type> with args <tool_args>]" at the beginning of the tool result message.
+After executing a tool, a final response message must be written.
+
+Refer to the usage instructions below for each <tool_type>.
+
+<MCP_Tool>
+   Use MCP tools through tools.
+   MCP tool names are structured as follows:
+     {MCP_NAME}_{TOOL_NAME}
+     For example, tool names for the "notionApi" mcp would be:
+       notionApi_API-post-search
+
+   Separate rules can be specified under <{MCP_NAME}> for each MCP_NAME.
+</MCP_Tool>
+
+<A2A_Tool>
+   A2A_Tool is a tool that sends queries to Agents with different information than mine and receives answers. The Agent that provided the answer must be clearly indicated.
+   Results from A2A_Tool are text generated after thorough consideration by the requested Agent, and are complete outputs that cannot be further developed.
+   There is no need to supplement the content with the same question or use new tools.
+
+   When text starting with "[A2A Call by <AGENT_NAME>]" comes as a request, it is a query requested by another Agent using A2A_Tool.
+   In this case, the answer should be generated using only MCP_Tool without using other A2A_Tools.
+</A2A_Tool>`
+
+	const manifest = {
 		name: "ComCom Agent",
 		description: "An agent that can provide answers by referencing the contents of ComCom Notion.",
 		version: "0.0.2", // Incremented version

@@ -1,0 +1,9 @@
+{
+  "name": "@ainetwork/adk-provider-model-azure",
+  "version": "0.1.0",
+  "dependencies": {
+    "@ainetwork/adk": "^0.0.2",
+    "openai": "^5.10.2"
+  },
+  "license": "MIT"
+}

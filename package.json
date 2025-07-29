@@ -1,0 +1,16 @@
+{
+  "name": "ain-adk-providers",
+  "version": "0.1.0",
+  "scripts": {
+		"build": "npm run build:esm && npm run build:cjs",
+		"format": "npx @biomejs/biome format --write",
+		"lint": "npx @biomejs/biome lint --write",
+		"check": "npx @biomejs/biome check",
+		"check:write": "npx @biomejs/biome check --write",
+		"prepare": "husky"
+	},
+  "devDependencies": {
+    "lerna": "^8.2.3"
+  },
+  "license": "MIT"
+}

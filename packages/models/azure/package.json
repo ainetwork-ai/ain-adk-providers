@@ -1,19 +1,19 @@
 {
   "name": "@ainetwork/adk-provider-model-azure",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "author": "AI Network (https://ainetwork.ai)",
-  "type": "module",
-  "engines": {
-    "node": ">=20"
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+	"type": "module",
+	"engines": {
+		"node": ">=20"
+	},
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     }
   },
   "scripts": {
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.1.2",
+    "@ainetwork/adk": "^0.1.0",
     "openai": "^5.10.2"
   },
   "devDependencies": {

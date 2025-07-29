@@ -92,7 +92,7 @@ Refer to the usage instructions below for each <tool_type>.
 	};
 	const agent = new AINAgent(
 		manifest,
-		{ modelModule, mcpModule }
+		{ modelModule, mcpModule, memoryModule }
 	);
 
 	agent.start(PORT);

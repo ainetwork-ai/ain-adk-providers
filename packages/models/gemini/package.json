@@ -1,9 +1,18 @@
 {
-  "name": "@ainetwork/adk-provider-model-azure",
+  "name": "@ainetwork/adk-provider-model-gemini",
   "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
   "dependencies": {
     "@ainetwork/adk": "^0.0.2",
     "@google/genai": "^1.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
   },
   "license": "MIT"
 }

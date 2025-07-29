@@ -1,9 +1,4 @@
-import {
-	type Content,
-	type FunctionCall,
-	type FunctionDeclaration,
-	GoogleGenAI,
-} from "@google/genai";
+import { BaseModel } from "@ainetwork/adk/modules/models/base.model.js";
 import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory.js";
 import type {
 	FetchResponse,
@@ -13,7 +8,12 @@ import type {
 	ToolCall,
 } from "@ainetwork/adk/types/tool.js";
 import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool.js";
-import { BaseModel } from "@ainetwork/adk/modules/models/base.model.js";
+import {
+	type Content,
+	type FunctionCall,
+	type FunctionDeclaration,
+	GoogleGenAI,
+} from "@google/genai";
 
 export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 	private client: GoogleGenAI;

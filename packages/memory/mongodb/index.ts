@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import { BaseMemory } from "@ainetwork/adk/modules/memory/base.memory.js";
 import type { ChatObject, SessionObject } from "@ainetwork/adk/types/memory.js";
 import { loggers } from "@ainetwork/adk/utils/logger.js";
-import { BaseMemory } from "@ainetwork/adk/modules/memory/base.memory.js";
+import mongoose from "mongoose";
 import {
 	type ChatDocument,
 	ChatModel,

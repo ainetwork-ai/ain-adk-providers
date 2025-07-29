@@ -1,9 +1,4 @@
-import { AzureOpenAI as AzureOpenAIClient } from "openai";
-import type {
-	ChatCompletionMessageParam as CCMessageParam,
-	ChatCompletionMessageToolCall,
-	ChatCompletionTool,
-} from "openai/resources";
+import { BaseModel } from "@ainetwork/adk/modules/models/base.model.js";
 import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory.js";
 import type {
 	FetchResponse,
@@ -13,7 +8,12 @@ import type {
 	ToolCall,
 } from "@ainetwork/adk/types/tool.js";
 import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool.js";
-import { BaseModel } from "@ainetwork/adk/modules/models/base.model.js";
+import { AzureOpenAI as AzureOpenAIClient } from "openai";
+import type {
+	ChatCompletionMessageParam as CCMessageParam,
+	ChatCompletionMessageToolCall,
+	ChatCompletionTool,
+} from "openai/resources";
 
 export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 	private client: AzureOpenAIClient;

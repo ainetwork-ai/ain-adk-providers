@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "scripts": {
 		"build": "npm run build:esm && npm run build:cjs",
-		"format": "npx @biomejs/biome format --write",
-		"lint": "npx @biomejs/biome lint --write",
-		"check": "npx @biomejs/biome check",
-		"check:write": "npx @biomejs/biome check --write",
+		"lint": "npx @biomejs/biome check",
+		"lint:write": "npx @biomejs/biome check --write",
+    "clean": "yarn clear-build-cache && yarn clear-build-info && lerna clean",
 		"prepare": "husky"
 	},
   "devDependencies": {

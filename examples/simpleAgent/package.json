@@ -1,0 +1,10 @@
+{
+  "name": "simpleAgent",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@ainetwork/adk": "^0.1.2",
+    "@modelcontextprotocol/sdk": "^1.17.0"
+  }
+}

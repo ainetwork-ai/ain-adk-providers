@@ -1,4 +1,4 @@
-import { BaseModel } from "@ainetwork/adk/modules/models/base.model";
+import { BaseModel } from "@ainetwork/adk/modules";
 import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
 import type {
 	FetchResponse,

@@ -1,4 +1,4 @@
-import { BaseMemory } from "@ainetwork/adk/modules/memory/base.memory";
+import { BaseMemory } from "@ainetwork/adk/modules";
 import type { ChatObject, SessionObject } from "@ainetwork/adk/types/memory";
 import { loggers } from "@ainetwork/adk/utils/logger";
 import mongoose from "mongoose";

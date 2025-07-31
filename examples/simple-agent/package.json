@@ -9,8 +9,7 @@
     "@ainetwork/adk-provider-memory-inmemory": "^0.1.1",
     "@ainetwork/adk-provider-model-azure": "^0.1.2",
     "@ainetwork/adk-provider-model-gemini": "^0.1.1",
-    "@modelcontextprotocol/sdk": "^1.17.0",
-    "ts-node": "^10.9.2"
+    "@modelcontextprotocol/sdk": "^1.17.0"
   },
   "devDependencies": {
     "tsx": "^4.20.3",

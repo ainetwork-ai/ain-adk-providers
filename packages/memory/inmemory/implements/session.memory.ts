@@ -24,6 +24,8 @@ export class InMemorySession implements ISessionMemory {
     const session = await this.getSession(sessionId);
     if (session) {
       session.chats[newChatId] = chat;
+    } else {
+      this.sessions.set(sessionId, { chats: { [newChatId]: chat }});
     }
   };
 

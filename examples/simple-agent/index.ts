@@ -4,7 +4,7 @@ import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { InMemoryMemory } from "@ainetwork/adk-provider-memory-inmemory";
+import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
 import { AINAgent } from "@ainetwork/adk";
 
 const PORT = Number(process.env.PORT) || 9100;
@@ -37,8 +37,10 @@ async function main() {
 		},
 	});
 
-	const inMemoryMemory = new InMemoryMemory();
-	const memoryModule = new MemoryModule(inMemoryMemory);
+	const memoryModule = new MemoryModule({
+		session: new InMemorySession(),
+		intent: new InMemoryIntent(),
+	});
 
 	const systemPrompt = `
 You are a highly sophisticated automated agent that can answer user queries by utilizing various tools and resources.

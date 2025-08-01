@@ -31,14 +31,15 @@ export class InMemorySession extends MongoDBMemory implements ISessionMemory {
 		return sessionObject;
   };
 
-	public async createSession(sessionId: string, userId?: string): Promise<void> {
+	public async createSession(userId: string, sessionId: string): Promise<void> {
   };
 
-	public async addChatToSession(sessionId: string, chat: ChatObject, userId?: string): Promise<void> {
+	public async addChatToSession(userId: string, sessionId: string, chat: ChatObject): Promise<void> {
     const newId = randomUUID();
 		await ChatModel.create({
 			sessionId,
       chatId: newId,
+      userId,
 			role: chat.role,
 			content: chat.content,
 			timestamp: chat.timestamp,
@@ -46,8 +47,8 @@ export class InMemorySession extends MongoDBMemory implements ISessionMemory {
 		});
   };
 
-	public async deleteSession(sessionId: string, userId?: string): Promise<void> {
-		const chats = await ChatModel.find({ sessionId }).sort({
+	public async deleteSession(userId: string, sessionId: string): Promise<void> {
+		const chats = await ChatModel.find({ userId, sessionId }).sort({
 			timestamp: 1,
 		});
 

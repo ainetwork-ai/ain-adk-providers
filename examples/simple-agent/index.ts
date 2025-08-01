@@ -4,7 +4,8 @@ import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { BaseAuth, MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
+// import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
+import { InMemorySession, InMemoryIntent } from "../../packages/memory/inmemory/index.js";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 

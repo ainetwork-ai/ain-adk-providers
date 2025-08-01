@@ -3,11 +3,19 @@ import "dotenv/config";
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
-import { MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
+import { BaseAuth, MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
 import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
 import { AINAgent } from "@ainetwork/adk";
+import { AuthResponse } from "@ainetwork/adk/types/auth";
 
 const PORT = Number(process.env.PORT) || 9100;
+
+class NoAuthScheme extends BaseAuth {
+	public async authenticate(req, res): Promise<AuthResponse> {
+		return { isAuthenticated: true, userId: 'test-user-id' }
+	}
+}
+
 
 async function main() {
 	const modelModule = new ModelModule();
@@ -82,6 +90,8 @@ Refer to the usage instructions below for each <tool_type>.
    In this case, the answer should be generated using only MCP_Tool without using other A2A_Tools.
 </A2A_Tool>`
 
+	const authScheme = new NoAuthScheme();
+
 	const manifest = {
 		name: "ComCom Agent",
 		description: "An agent that can provide answers by referencing the contents of ComCom Notion.",
@@ -94,7 +104,8 @@ Refer to the usage instructions below for each <tool_type>.
 	};
 	const agent = new AINAgent(
 		manifest,
-		{ modelModule, mcpModule, memoryModule }
+		{ modelModule, mcpModule, memoryModule },
+		authScheme,
 	);
 
 	agent.start(PORT);

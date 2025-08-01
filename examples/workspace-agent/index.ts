@@ -9,13 +9,14 @@ import { InMemorySession, InMemoryIntent } from "../../packages/memory/inmemory/
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 
-const PORT = Number(process.env.PORT) || 9100;
+const PORT = Number(process.env.PORT) || 9101;
 
 class NoAuthScheme extends BaseAuth {
 	public async authenticate(req, res): Promise<AuthResponse> {
 		return { isAuthenticated: true, userId: 'test-user-id' }
 	}
 }
+
 
 async function main() {
 	const modelModule = new ModelModule();
@@ -32,6 +33,33 @@ async function main() {
 		process.env.GEMINI_MODEL_NAME!,
 	);
 	modelModule.addModel('gemini-2.5', geminiModel);
+
+	const mcpModule = new MCPModule();
+	await mcpModule.addMCPConfig({
+		notionApi: {
+			command: "npx",
+			args: ["-y", "@notionhq/notion-mcp-server"],
+			env: {
+				...getDefaultEnvironment(),
+				OPENAPI_MCP_HEADERS: `{\"Authorization\": \"Bearer ${process.env.NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\" }`,
+			},
+		},
+	});
+	await mcpModule.addMCPConfig({
+		slack: {
+			command: "npx",
+			args: [
+				"-y",
+        "slack-mcp-server@latest",
+        "--transport",
+        "stdio"
+      ],
+			env: {
+				...getDefaultEnvironment(),
+				SLACK_MCP_XOXP_TOKEN: process.env.SLACK_MCP_XOXP_TOKEN!
+			},
+		},
+	});
 
 	const memoryModule = new MemoryModule({
 		session: new InMemorySession(),
@@ -81,9 +109,9 @@ Refer to the usage instructions below for each <tool_type>.
 	const authScheme = new NoAuthScheme();
 
 	const manifest = {
-		name: "Sample Agent",
-		description: "An sample agent",
-		version: "0.0.2", // Incremented version
+		name: "ComCom Workspace Agent",
+		description: "An agent that can provide answers by referencing the contents of ComCom Notion and Slack.",
+		version: "0.0.2",
 		url: `http://localhost:${PORT}`,
 		prompts: {
 			agent: "",
@@ -92,7 +120,7 @@ Refer to the usage instructions below for each <tool_type>.
 	};
 	const agent = new AINAgent(
 		manifest,
-		{ modelModule, memoryModule },
+		{ modelModule, mcpModule, memoryModule },
 		authScheme,
 	);
 

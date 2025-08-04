@@ -1,5 +1,6 @@
 import { BaseModel } from "@ainetwork/adk/modules";
 import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
+import { ToolCallDelta, LLMStream, StreamChunk } from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
 	IA2ATool,
@@ -13,6 +14,7 @@ import type {
 	ChatCompletionMessageParam as CCMessageParam,
 	ChatCompletionMessageToolCall,
 	ChatCompletionTool,
+	ChatCompletionChunk,
 } from "openai/resources";
 
 export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
@@ -116,6 +118,55 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			};
 		}
 		return await this.fetch(messages);
+	}
+
+  async fetchStreamWithContextMessage(messages: CCMessageParam[], functions: ChatCompletionTool[]) {
+    const stream = await this.client.chat.completions.create({
+      model: this.modelName,
+      messages,
+      tools: functions,
+      tool_choice: "auto",
+      stream: true,
+    });
+    return await this.createOpenAIStreamAdapter(stream);
+  }
+
+  // NOTE(yoojin): Need to switch API Stream type to LLMStream.
+  private createOpenAIStreamAdapter(
+		openaiStream: AsyncIterable<ChatCompletionChunk>,
+	): LLMStream {
+		return {
+			async *[Symbol.asyncIterator](): AsyncIterator<StreamChunk> {
+				for await (const openaiChunk of openaiStream) {
+					const choice = openaiChunk.choices[0];
+					if (choice) {
+						const streamChunk: StreamChunk = {
+							delta: {
+								role: choice.delta.role,
+								content: choice.delta.content || undefined,
+								tool_calls: choice.delta.tool_calls?.map(
+									(tc) =>
+										({
+											index: tc.index,
+											id: tc.id,
+											type: tc.type,
+											function: tc.function,
+										}) as ToolCallDelta,
+								),
+							},
+							finish_reason: choice.finish_reason as any,
+							metadata: {
+								provider: "openai",
+								model: openaiChunk.model,
+								id: openaiChunk.id,
+							},
+						};
+						yield streamChunk;
+					}
+				}
+			},
+			metadata: { provider: "openai" },
+		};
 	}
 
 	convertToolsToFunctions(tools: IAgentTool[]): ChatCompletionTool[] {

@@ -93,6 +93,7 @@ Refer to the usage instructions below for each <tool_type>.
 		manifest,
 		{ modelModule, memoryModule },
 		authScheme,
+		true
 	);
 
 	agent.start(PORT);

@@ -3,8 +3,7 @@ import "dotenv/config";
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { BaseAuth, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-// import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
-import { InMemorySession, InMemoryIntent } from "../../packages/memory/inmemory/index.js";
+import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 

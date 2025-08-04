@@ -3,7 +3,7 @@ import "dotenv/config";
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 import { BaseAuth, MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { MongoDBSession, MongoDBIntent } from "../../packages/memory/mongodb/index.js";
+import { MongoDBSession, MongoDBIntent } from "@ainetwork/adk-provider-memory-mongodb";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 

@@ -2,10 +2,9 @@ import "dotenv/config";
 
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
-import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { BaseAuth, MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
 // import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
-import { InMemorySession, InMemoryIntent } from "../../packages/memory/inmemory/index.js";
+import { MongoDBSession, MongoDBIntent } from "../../packages/memory/mongodb/index.js";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 
@@ -17,7 +16,6 @@ class NoAuthScheme extends BaseAuth {
 	}
 }
 
-
 async function main() {
 	const modelModule = new ModelModule();
 	const azureModel = new AzureOpenAI(
@@ -27,12 +25,6 @@ async function main() {
 		process.env.AZURE_OPENAI_MODEL_NAME!,
 	);
 	modelModule.addModel('azure-gpt-4o', azureModel);
-
-	const geminiModel = new GeminiModel(
-		process.env.GEMINI_API_KEY!,
-		process.env.GEMINI_MODEL_NAME!,
-	);
-	modelModule.addModel('gemini-2.5', geminiModel);
 
 	const mcpModule = new MCPModule();
 	await mcpModule.addMCPConfig({

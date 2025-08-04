@@ -6,9 +6,8 @@ The agent is designed to answer user queries by utilizing various tools and AI m
 
 ## Features
 
-- **Multi-Model Support:** Integrates both Azure OpenAI and Google Gemini models.
 - **Tool Integration (MCP):** Includes a Model Context Protocol (MCP) module to connect with external tools. This example is configured to allow the agent to search and retrieve information from Notion and Slack.
-- **In-Memory State:** Uses an in-memory module to manage the agent's state and conversation history.
+- **MongoDB State:** Uses MongoDB memory module to manage the agent's state and conversation history.
 - **Extensible:** The example shows how to add different modules (Models, MCP, Memory) and can be easily extended to include more tools or functionalities.
 
 ## How to Run

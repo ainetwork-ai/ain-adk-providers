@@ -1,2 +1,2 @@
-export { InMemorySession } from "./implements/session.memory";
-export { InMemoryIntent } from "./implements/intent.memory";
+export { MongoDBSession } from "./implements/session.memory";
+export { MongoDBIntent } from "./implements/intent.memory";

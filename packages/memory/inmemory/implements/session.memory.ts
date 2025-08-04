@@ -1,14 +1,21 @@
 import { randomUUID } from "node:crypto";
-import type { ChatObject, SessionObject } from "@ainetwork/adk/types/memory";
+import type { ChatObject, SessionObject, SessionMetadata } from "@ainetwork/adk/types/memory";
 import { ISessionMemory } from "@ainetwork/adk/modules";
 
 type InMemorySessionObject = {
   chats: Map<string, ChatObject>
 }
 
+type InMemorySessionMetadata = {
+  sessionId: string;
+  title?: string;
+  updatedAt: number;
+  createdAt: number;
+}
+
 export class InMemorySession implements ISessionMemory {
 	public sessions: Map<string, InMemorySessionObject> = new Map();
-  public userSessionIndex: Map<string, Set<string>> = new Map();
+  public userSessionIndex: Map<string, Set<InMemorySessionMetadata>> = new Map();
 
   public async connect(): Promise<void> {}
   public async disconnect(): Promise<void> {}
@@ -39,7 +46,10 @@ export class InMemorySession implements ISessionMemory {
     }
     if (!this.sessions.has(key)) {
       this.sessions.set(key, { chats: new Map() });
-      this.userSessionIndex.get(userId)?.add(sessionId);
+      const metadata: InMemorySessionMetadata = {
+        sessionId, createdAt: Date.now(), updatedAt: Date.now(),
+      }
+      this.userSessionIndex.get(userId)?.add(metadata);
     }
   };
 
@@ -59,7 +69,7 @@ export class InMemorySession implements ISessionMemory {
     this.userSessionIndex.delete(sessionId);
   };
 
-	public async listSessions(userId: string): Promise<string[]> {
+	public async listSessions(userId: string): Promise<SessionMetadata[]> {
     const sessions = this.userSessionIndex.get(userId);
     if (sessions) {
       return Array.from(sessions);

@@ -4,7 +4,7 @@ import { IIntentMemory } from "@ainetwork/adk/modules";
 import { MongoDBMemory } from "./base.memory";
 import { IntentModel } from "../models/intent.model";
 
-export class InMemoryIntent extends MongoDBMemory implements IIntentMemory {
+export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
   public async getIntent(intentId: string): Promise<Intent | undefined> {
     const intent = await IntentModel.findById(intentId);
     if (intent) {
@@ -41,8 +41,16 @@ export class InMemoryIntent extends MongoDBMemory implements IIntentMemory {
   };
 
 	public async deleteIntent(intentId: string): Promise<void> {
+    await IntentModel.deleteOne({ _id: intentId });
   };
 
 	public async listIntents(): Promise<Intent[]> {
+    const intents = await IntentModel.find();
+    return intents.map(intent => ({
+      name: intent.name,
+      description: intent.description,
+      prompt: intent.prompt,
+      llm: intent.llm,
+    } as Intent));
   };
 }

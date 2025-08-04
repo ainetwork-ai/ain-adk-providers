@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { ChatObject, SessionObject } from "@ainetwork/adk/types/memory";
+import type { ChatObject, SessionMetadata, SessionObject } from "@ainetwork/adk/types/memory";
 import { ISessionMemory } from "@ainetwork/adk/modules";
 import { MongoDBMemory } from "./base.memory";
 import {

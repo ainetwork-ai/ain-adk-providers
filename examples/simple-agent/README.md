@@ -2,12 +2,9 @@
 
 This example demonstrates how to build a simple agent using the AINetwork ADK (Agent Development Kit).
 
-The agent is designed to answer user queries by utilizing various tools and AI models. It's pre-configured to interact with Notion as a knowledge source.
-
 ## Features
 
 - **Multi-Model Support:** Integrates both Azure OpenAI and Google Gemini models.
-- **Tool Integration (MCP):** Includes a Model Context Protocol (MCP) module to connect with external tools. This example is configured to use the Notion API, allowing the agent to search and retrieve information from a Notion workspace.
 - **In-Memory State:** Uses an in-memory module to manage the agent's state and conversation history.
 - **Extensible:** The example shows how to add different modules (Models, MCP, Memory) and can be easily extended to include more tools or functionalities.
 
@@ -46,9 +43,6 @@ AZURE_OPENAI_MODEL_NAME=YOUR_AZURE_DEPLOYMENT_NAME
 # Google Gemini
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 GEMINI_MODEL_NAME=YOUR_GEMINI_MODEL_NAME
-
-# Notion API (for MCP Tool)
-NOTION_API_KEY=YOUR_NOTION_INTEGRATION_TOKEN
 
 # Optional: Port
 PORT=9100

@@ -5,10 +5,15 @@ import { loggers } from "@ainetwork/adk/utils/logger";
 export class MongoDBMemory implements IMemory {
   private _isConnected: boolean = false;
   private _uri: string;
-  private _mongoose: Mongoose | null = null;
+  private _mongoose: Mongoose;
 
   constructor(uri: string) {
     this._uri = uri;
+    this._mongoose = new Mongoose();
+  }
+
+  public getInstance(): Mongoose {
+    return this._mongoose;
   }
 
   public async connect(): Promise<void> {
@@ -17,7 +22,7 @@ export class MongoDBMemory implements IMemory {
 		}
 
 		try {
-			this._mongoose = await mongoose.connect(this._uri);
+      await this._mongoose.connect(this._uri);
 			this._isConnected = true;
 			loggers.agent.info("MongoDB connected successfully");
 		} catch (error) {
@@ -34,7 +39,6 @@ export class MongoDBMemory implements IMemory {
 		try {
 			await this._mongoose?.disconnect();
 			this._isConnected = false;
-      this._mongoose = null;
 			loggers.agent.info("MongoDB disconnected successfully");
 		} catch (error) {
 			loggers.agent.error("Failed to disconnect from MongoDB:", error);

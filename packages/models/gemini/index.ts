@@ -1,6 +1,10 @@
 import { BaseModel } from "@ainetwork/adk/modules";
 import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
-import { LLMStream, StreamChunk, ToolCallDelta } from "@ainetwork/adk/types/stream";
+import type {
+	LLMStream,
+	StreamChunk,
+	ToolCallDelta,
+} from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
 	IA2ATool,
@@ -13,7 +17,7 @@ import {
 	type Content,
 	type FunctionCall,
 	type FunctionDeclaration,
-	GenerateContentResponse,
+	type GenerateContentResponse,
 	GoogleGenAI,
 } from "@google/genai";
 
@@ -114,26 +118,28 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		return await this.fetch(messages);
 	}
 
-  async fetchStreamWithContextMessage(messages: Content[], functions: FunctionDeclaration[]): Promise<LLMStream> {
-    const stream = await this.client.models.generateContentStream({
-      model: this.modelName,
-      contents: messages,
-      config: { tools: [{ functionDeclarations: functions }] },
-    });
+	async fetchStreamWithContextMessage(
+		messages: Content[],
+		functions: FunctionDeclaration[],
+	): Promise<LLMStream> {
+		const stream = await this.client.models.generateContentStream({
+			model: this.modelName,
+			contents: messages,
+			config: { tools: [{ functionDeclarations: functions }] },
+		});
 
-    return await this.createGeminiStreamAdapter(stream);
-  }
+		return await this.createGeminiStreamAdapter(stream);
+	}
 
-  // NOTE(yoojin): Need to switch API Stream type to LLMStream.
-  private createGeminiStreamAdapter(
+	// NOTE(yoojin): Need to switch API Stream type to LLMStream.
+	private createGeminiStreamAdapter(
 		geminiStream: AsyncIterable<GenerateContentResponse>,
 	): LLMStream {
-
-    const hasName = (
-      value: FunctionCall,
-    ): value is FunctionCall & { name: string } => {
-      return value.name !== undefined;
-    };
+		const hasName = (
+			value: FunctionCall,
+		): value is FunctionCall & { name: string } => {
+			return value.name !== undefined;
+		};
 
 		return {
 			async *[Symbol.asyncIterator](): AsyncIterator<StreamChunk> {
@@ -141,25 +147,39 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 					yield {
 						delta: {
 							role: geminiChunk.candidates?.[0]?.content?.role,
-							content: geminiChunk.candidates?.[0]?.content?.parts?.[0]?.text || undefined,
-							tool_calls: hasName(geminiChunk.candidates?.[0]?.content?.parts?.[0]?.functionCall || {}) ? [{
-                index: 0,
-                id: geminiChunk.candidates?.[0]?.content?.parts?.[0]?.functionCall?.id || "id",
-                function: {
-                  name: geminiChunk.candidates?.[0]?.content?.parts?.[0]?.functionCall?.name,
-                  arguments: geminiChunk.candidates?.[0]?.content?.parts?.[0]?.functionCall?.args,
-                },
-              }] as ToolCallDelta[] : undefined,
-            },
-            finish_reason: geminiChunk.candidates?.[0]?.finishReason as any,
-            metadata: {
-              provider: "gemini",
-            },
-          };
-        }
-      }
-    };
-  }
+							content:
+								geminiChunk.candidates?.[0]?.content?.parts?.[0]?.text ||
+								undefined,
+							tool_calls: hasName(
+								geminiChunk.candidates?.[0]?.content?.parts?.[0]
+									?.functionCall || {},
+							)
+								? ([
+										{
+											index: 0,
+											id:
+												geminiChunk.candidates?.[0]?.content?.parts?.[0]
+													?.functionCall?.id || "id",
+											function: {
+												name: geminiChunk.candidates?.[0]?.content?.parts?.[0]
+													?.functionCall?.name,
+												arguments:
+													geminiChunk.candidates?.[0]?.content?.parts?.[0]
+														?.functionCall?.args,
+											},
+										},
+									] as ToolCallDelta[])
+								: undefined,
+						},
+						finish_reason: geminiChunk.candidates?.[0]?.finishReason as any,
+						metadata: {
+							provider: "gemini",
+						},
+					};
+				}
+			},
+		};
+	}
 
 	convertToolsToFunctions(tools: IAgentTool[]): FunctionDeclaration[] {
 		const functions: FunctionDeclaration[] = [];

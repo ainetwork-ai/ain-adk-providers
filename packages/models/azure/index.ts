@@ -1,6 +1,10 @@
 import { BaseModel } from "@ainetwork/adk/modules";
 import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
-import { ToolCallDelta, LLMStream, StreamChunk } from "@ainetwork/adk/types/stream";
+import type {
+	LLMStream,
+	StreamChunk,
+	ToolCallDelta,
+} from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
 	IA2ATool,
@@ -12,9 +16,9 @@ import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool";
 import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,
+	ChatCompletionChunk,
 	ChatCompletionMessageToolCall,
 	ChatCompletionTool,
-	ChatCompletionChunk,
 } from "openai/resources";
 
 export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
@@ -120,19 +124,22 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		return await this.fetch(messages);
 	}
 
-  async fetchStreamWithContextMessage(messages: CCMessageParam[], functions: ChatCompletionTool[]) {
-    const stream = await this.client.chat.completions.create({
-      model: this.modelName,
-      messages,
-      tools: functions,
-      tool_choice: "auto",
-      stream: true,
-    });
-    return await this.createOpenAIStreamAdapter(stream);
-  }
+	async fetchStreamWithContextMessage(
+		messages: CCMessageParam[],
+		functions: ChatCompletionTool[],
+	) {
+		const stream = await this.client.chat.completions.create({
+			model: this.modelName,
+			messages,
+			tools: functions,
+			tool_choice: "auto",
+			stream: true,
+		});
+		return await this.createOpenAIStreamAdapter(stream);
+	}
 
-  // NOTE(yoojin): Need to switch API Stream type to LLMStream.
-  private createOpenAIStreamAdapter(
+	// NOTE(yoojin): Need to switch API Stream type to LLMStream.
+	private createOpenAIStreamAdapter(
 		openaiStream: AsyncIterable<ChatCompletionChunk>,
 	): LLMStream {
 		return {

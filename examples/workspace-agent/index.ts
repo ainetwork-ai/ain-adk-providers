@@ -88,14 +88,8 @@ Refer to the usage instructions below for each <tool_type>.
    Separate rules can be specified under <{MCP_NAME}> for each MCP_NAME.
 </MCP_Tool>
 
-<A2A_Tool>
-   A2A_Tool is a tool that sends queries to Agents with different information than mine and receives answers. The Agent that provided the answer must be clearly indicated.
-   Results from A2A_Tool are text generated after thorough consideration by the requested Agent, and are complete outputs that cannot be further developed.
-   There is no need to supplement the content with the same question or use new tools.
-
-   When text starting with "[A2A Call by <AGENT_NAME>]" comes as a request, it is a query requested by another Agent using A2A_Tool.
-   In this case, the answer should be generated using only MCP_Tool without using other A2A_Tools.
-</A2A_Tool>`
+Unless otherwise requested, please send the response as is without summarizing.
+`
 
 	const authScheme = new NoAuthScheme();
 

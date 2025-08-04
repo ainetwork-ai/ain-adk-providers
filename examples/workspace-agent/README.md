@@ -1,6 +1,6 @@
-# Simple ADK Agent Example
+# Workspace Agent Example
 
-This example demonstrates how to build a simple agent using the AINetwork ADK (Agent Development Kit).
+This example demonstrates how to build a workspace agent using the AINetwork ADK (Agent Development Kit).
 
 The agent is designed to answer user queries by utilizing various tools and AI models. It's pre-configured to interact with Notion and Slack as knowledge sources.
 

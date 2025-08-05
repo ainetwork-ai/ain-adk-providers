@@ -1,4 +1,4 @@
-import mongoose, { type Document, Schema } from "mongoose";
+import { type Document, Schema } from "mongoose";
 
 // ChatRole enum
 export enum ChatRole {
@@ -7,8 +7,43 @@ export enum ChatRole {
 	MODEL = "MODEL",
 }
 
+export const SessionObjectSchema = new Schema(
+	{
+		sessionId: {
+			type: String,
+			required: true,
+			index: true,
+		},
+		userId: {
+			type: String,
+			required: true,
+			index: true,
+		},
+		title: {
+			type: String,
+			required: false,
+		},
+		created_at: {
+			type: Number,
+			required: true,
+		},
+		updated_at: {
+			type: Number,
+			required: true,
+		}
+	},
+);
+
+export interface SessionDocument extends Document {
+	sessionId: string;
+	userId: string;
+	title?: string;
+	created_at: number;
+	updated_at: number;
+}
+
 // ChatContentObject schema
-const ChatContentObjectSchema = new Schema(
+export const ChatContentObjectSchema = new Schema(
 	{
 		type: { type: String, required: true },
 		parts: { type: [Schema.Types.Mixed], required: true },
@@ -17,7 +52,7 @@ const ChatContentObjectSchema = new Schema(
 );
 
 // ChatObject schema - 개별 문서로 저장
-const ChatObjectSchema = new Schema(
+export const ChatObjectSchema = new Schema(
 	{
 		sessionId: {
 			type: String,
@@ -42,9 +77,6 @@ const ChatObjectSchema = new Schema(
 			default: {},
 		},
 	},
-	{
-		timestamps: true,
-	},
 );
 
 // Chat Document interface
@@ -60,6 +92,3 @@ export interface ChatDocument extends Document {
 	createdAt: Date;
 	updatedAt: Date;
 }
-
-// Export the model
-export const ChatModel = mongoose.model<ChatDocument>("Chat", ChatObjectSchema);

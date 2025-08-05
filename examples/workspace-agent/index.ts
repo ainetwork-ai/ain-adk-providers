@@ -1,13 +1,13 @@
 import "dotenv/config";
 
+import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
-import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
-import { BaseAuth, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
+import { BaseAuth, MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
+import { MongoDBSession, MongoDBIntent } from "@ainetwork/adk-provider-memory-mongodb";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 
-const PORT = Number(process.env.PORT) || 9100;
+const PORT = Number(process.env.PORT) || 9101;
 
 class NoAuthScheme extends BaseAuth {
 	public async authenticate(req, res): Promise<AuthResponse> {
@@ -25,15 +25,36 @@ async function main() {
 	);
 	modelModule.addModel('azure-gpt-4o', azureModel);
 
-	const geminiModel = new GeminiModel(
-		process.env.GEMINI_API_KEY!,
-		process.env.GEMINI_MODEL_NAME!,
-	);
-	modelModule.addModel('gemini-2.5', geminiModel);
+	const mcpModule = new MCPModule();
+	await mcpModule.addMCPConfig({
+		notionApi: {
+			command: "npx",
+			args: ["-y", "@notionhq/notion-mcp-server"],
+			env: {
+				...getDefaultEnvironment(),
+				OPENAPI_MCP_HEADERS: `{\"Authorization\": \"Bearer ${process.env.NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\" }`,
+			},
+		},
+	});
+	await mcpModule.addMCPConfig({
+		slack: {
+			command: "npx",
+			args: [
+				"-y",
+        "slack-mcp-server@latest",
+        "--transport",
+        "stdio"
+      ],
+			env: {
+				...getDefaultEnvironment(),
+				SLACK_MCP_XOXP_TOKEN: process.env.SLACK_MCP_XOXP_TOKEN!
+			},
+		},
+	});
 
 	const memoryModule = new MemoryModule({
-		session: new InMemorySession(),
-		intent: new InMemoryIntent(),
+		session: new MongoDBSession(process.env.MONGO_DB_CONNECTION_STRING!),
+		intent: new MongoDBIntent(process.env.MONGO_DB_CONNECTION_STRING!),
 	});
 
 	const systemPrompt = `
@@ -67,21 +88,15 @@ Refer to the usage instructions below for each <tool_type>.
    Separate rules can be specified under <{MCP_NAME}> for each MCP_NAME.
 </MCP_Tool>
 
-<A2A_Tool>
-   A2A_Tool is a tool that sends queries to Agents with different information than mine and receives answers. The Agent that provided the answer must be clearly indicated.
-   Results from A2A_Tool are text generated after thorough consideration by the requested Agent, and are complete outputs that cannot be further developed.
-   There is no need to supplement the content with the same question or use new tools.
-
-   When text starting with "[A2A Call by <AGENT_NAME>]" comes as a request, it is a query requested by another Agent using A2A_Tool.
-   In this case, the answer should be generated using only MCP_Tool without using other A2A_Tools.
-</A2A_Tool>`
+Unless otherwise requested, please send the response as is without summarizing.
+`
 
 	const authScheme = new NoAuthScheme();
 
 	const manifest = {
-		name: "Sample Agent",
-		description: "An sample agent",
-		version: "0.0.2", // Incremented version
+		name: "ComCom Workspace Agent",
+		description: "An agent that can provide answers by referencing the contents of ComCom Notion and Slack.",
+		version: "0.0.2",
 		url: `http://localhost:${PORT}`,
 		prompts: {
 			agent: "",
@@ -90,9 +105,8 @@ Refer to the usage instructions below for each <tool_type>.
 	};
 	const agent = new AINAgent(
 		manifest,
-		{ modelModule, memoryModule },
+		{ modelModule, mcpModule, memoryModule },
 		authScheme,
-		true
 	);
 
 	agent.start(PORT);

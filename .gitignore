@@ -7,3 +7,6 @@ examples/**/yarn.lock
 .env
 
 lerna-debug.log
+
+.channels_cache.json
+.users_cache.json

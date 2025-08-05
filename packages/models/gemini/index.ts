@@ -1,6 +1,11 @@
 import { BaseModel } from "@ainetwork/adk/modules";
 import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
 import type {
+	LLMStream,
+	StreamChunk,
+	ToolCallDelta,
+} from "@ainetwork/adk/types/stream";
+import type {
 	FetchResponse,
 	IA2ATool,
 	IAgentTool,
@@ -12,6 +17,7 @@ import {
 	type Content,
 	type FunctionCall,
 	type FunctionDeclaration,
+	type GenerateContentResponse,
 	GoogleGenAI,
 } from "@google/genai";
 
@@ -110,6 +116,69 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 			};
 		}
 		return await this.fetch(messages);
+	}
+
+	async fetchStreamWithContextMessage(
+		messages: Content[],
+		functions: FunctionDeclaration[],
+	): Promise<LLMStream> {
+		const stream = await this.client.models.generateContentStream({
+			model: this.modelName,
+			contents: messages,
+			config: { tools: [{ functionDeclarations: functions }] },
+		});
+
+		return await this.createGeminiStreamAdapter(stream);
+	}
+
+	// NOTE(yoojin): Need to switch API Stream type to LLMStream.
+	private createGeminiStreamAdapter(
+		geminiStream: AsyncIterable<GenerateContentResponse>,
+	): LLMStream {
+		const hasName = (
+			value: FunctionCall,
+		): value is FunctionCall & { name: string } => {
+			return value.name !== undefined;
+		};
+
+		return {
+			async *[Symbol.asyncIterator](): AsyncIterator<StreamChunk> {
+				for await (const geminiChunk of geminiStream) {
+					yield {
+						delta: {
+							role: geminiChunk.candidates?.[0]?.content?.role,
+							content:
+								geminiChunk.candidates?.[0]?.content?.parts?.[0]?.text ||
+								undefined,
+							tool_calls: hasName(
+								geminiChunk.candidates?.[0]?.content?.parts?.[0]
+									?.functionCall || {},
+							)
+								? ([
+										{
+											index: 0,
+											id:
+												geminiChunk.candidates?.[0]?.content?.parts?.[0]
+													?.functionCall?.id || "id",
+											function: {
+												name: geminiChunk.candidates?.[0]?.content?.parts?.[0]
+													?.functionCall?.name,
+												arguments:
+													geminiChunk.candidates?.[0]?.content?.parts?.[0]
+														?.functionCall?.args,
+											},
+										},
+									] as ToolCallDelta[])
+								: undefined,
+						},
+						finish_reason: geminiChunk.candidates?.[0]?.finishReason as any,
+						metadata: {
+							provider: "gemini",
+						},
+					};
+				}
+			},
+		};
 	}
 
 	convertToolsToFunctions(tools: IAgentTool[]): FunctionDeclaration[] {

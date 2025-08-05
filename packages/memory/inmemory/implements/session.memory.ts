@@ -39,7 +39,8 @@ export class InMemorySession implements ISessionMemory {
     return undefined;
   };
 
-	public async createSession(userId: string, sessionId: string): Promise<void> {
+	public async createSession(userId: string, sessionId: string, title: string): Promise<SessionMetadata> {
+    const now = Date.now();
     const key = this.generateKey(userId, sessionId);
     if (!this.userSessionIndex.has(userId)) {
       this.userSessionIndex.set(userId, new Set());
@@ -47,19 +48,17 @@ export class InMemorySession implements ISessionMemory {
     if (!this.sessions.has(key)) {
       this.sessions.set(key, { chats: new Map() });
       const metadata: InMemorySessionMetadata = {
-        sessionId, createdAt: Date.now(), updatedAt: Date.now(),
+        sessionId, createdAt: now, updatedAt: now,
       }
       this.userSessionIndex.get(userId)?.add(metadata);
     }
+
+    return { title, sessionId, updatedAt: now };
   };
 
 	public async addChatToSession(userId: string, sessionId: string, chat: ChatObject): Promise<void> {
     const key = this.generateKey(userId, sessionId);
     const newChatId = randomUUID();
-    if (!this.sessions.has(key)) {
-      await this.createSession(userId, sessionId);
-    }
-    const sessions = this.sessions.get(key);
     this.sessions.get(key)?.chats.set(newChatId, chat);
   };
 

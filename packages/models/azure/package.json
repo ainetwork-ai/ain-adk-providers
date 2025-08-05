@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.1.7",
+    "@ainetwork/adk": "^0.1.8",
     "openai": "^5.10.2"
   },
   "devDependencies": {

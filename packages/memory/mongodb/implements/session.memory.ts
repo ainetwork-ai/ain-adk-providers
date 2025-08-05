@@ -44,25 +44,23 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
 		return sessionObject;
   };
 
-	public async createSession(userId: string, sessionId: string): Promise<void> {
+	public async createSession(userId: string, sessionId: string, title: string): Promise<SessionMetadata> {
+    const now = Date.now();
     await this.sessionModel.create({
       sessionId,
       userId,
-      updated_at: Date.now(),
-      created_at: Date.now(),
+      updated_at: now,
+      created_at: now,
     });
+
+    return { title, sessionId, updatedAt: now };
   };
 
 	public async addChatToSession(userId: string, sessionId: string, chat: ChatObject): Promise<void> {
     const newId = randomUUID();
-    const session = await this.sessionModel.findOne({ sessionId, userId });
-    if (!session) {
-      await this.createSession(userId, sessionId);
-    } else {
-      await this.sessionModel.updateOne({ sessionId, userId }, {
-        updated_at: Date.now(),
-      });
-    }
+    await this.sessionModel.updateOne({ sessionId, userId }, {
+      updated_at: Date.now(),
+    });
 		await this.chatModel.create({
 			sessionId,
       chatId: newId,

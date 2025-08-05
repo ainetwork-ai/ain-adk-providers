@@ -51,7 +51,7 @@ This agent uses Firebase ID tokens for authentication. To make authenticated req
 ### Example Request
 
 ```bash
-curl -X POST http://localhost:9100/chat \
+curl -X POST http://localhost:9100/query \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN" \
   -d '{"message": "Hello, authenticated agent!"}'

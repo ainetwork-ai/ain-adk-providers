@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-memory-inmemory",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {

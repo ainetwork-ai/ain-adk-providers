@@ -24,7 +24,7 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
   }
 
   public async getSession(sessionId: string, userId?: string): Promise<SessionObject | undefined> {
-		const chats = await this.chatModel.find({ sessionId }).sort({
+		const chats = await this.chatModel.find({ sessionId, userId }).sort({
 			timestamp: 1,
 		});
 

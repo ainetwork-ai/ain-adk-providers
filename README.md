@@ -34,7 +34,7 @@ To see how to use this package in your project, check out our comprehensive exam
 Clone the repository and install all dependencies using Yarn.
 
 ```bash
-git clone https://github.com/ainetwork/ain-adk-providers.git
+git clone https://github.com/ainetwork-ai/ain-adk-providers.git
 cd ain-adk-providers
 yarn install
 ```

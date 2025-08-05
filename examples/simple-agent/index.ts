@@ -1,11 +1,9 @@
 import "dotenv/config";
 
-// import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
-import { AzureOpenAI } from "../../packages/models/azure/index.js";
+import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 // import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { BaseAuth, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-// import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
-import { MongoDBSession, MongoDBIntent } from "../../packages/memory/mongodb/index.js";
+import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 
@@ -28,8 +26,8 @@ async function main() {
 	modelModule.addModel('azure-gpt-4o', azureModel);
 
 	const memoryModule = new MemoryModule({
-		session: new MongoDBSession(process.env.MONGO_DB_CONNECTION_STRING!),
-		intent: new MongoDBIntent(process.env.MONGO_DB_CONNECTION_STRING!),
+		session: new InMemorySession(),
+		intent: new InMemoryIntent(),
 	});
 
 	const systemPrompt = `

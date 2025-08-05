@@ -58,6 +58,7 @@ export class InMemorySession implements ISessionMemory {
 
 	public async addChatToSession(userId: string, sessionId: string, chat: ChatObject): Promise<void> {
     const key = this.generateKey(userId, sessionId);
+    await this.createSession(userId, sessionId, "New chat");
     const newChatId = randomUUID();
     this.sessions.get(key)?.chats.set(newChatId, chat);
   };

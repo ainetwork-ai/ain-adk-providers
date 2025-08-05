@@ -2,7 +2,9 @@ node_modules
 dist
 
 packages/**/yarn.lock
+packages/**/package-lock.json
 examples/**/yarn.lock
+examples/**/package-lock.json
 
 .env
 

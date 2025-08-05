@@ -5,7 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk",
+    "@ainetwork/adk": "^0.1.9",
     "@ainetwork/adk-provider-memory-inmemory": "^0.1.3",
     "@ainetwork/adk-provider-model-azure": "^0.1.3",
     "@ainetwork/adk-provider-model-gemini": "^0.1.2",

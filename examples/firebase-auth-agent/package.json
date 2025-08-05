@@ -5,12 +5,12 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@ainetwork/adk": "^0.1.7",
-    "@ainetwork/adk-provider-memory-inmemory": "^0.1.2",
-    "@ainetwork/adk-provider-model-azure": "^0.1.3",
-    "@ainetwork/adk-provider-model-gemini": "^0.1.2",
-    "@modelcontextprotocol/sdk": "^1.17.0",
-    "@ainetwork/adk-provider-auth-firebase": "../../packages/auth/firebase"
+    "@ainetwork/adk": "^0.1.9",
+    "@ainetwork/adk-provider-auth-firebase": "^0.1.4",
+    "@ainetwork/adk-provider-memory-inmemory": "^0.1.4",
+    "@ainetwork/adk-provider-model-azure": "^0.1.5",
+    "@ainetwork/adk-provider-model-gemini": "^0.1.4",
+    "@modelcontextprotocol/sdk": "^1.17.0"
   },
   "devDependencies": {
     "tsx": "^4.20.3",

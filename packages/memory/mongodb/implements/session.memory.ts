@@ -5,29 +5,19 @@ import { MongoDBMemory } from "./base.memory";
 import {
 	ChatDocument,
 	ChatRole,
-  ChatObjectSchema,
-  SessionObjectSchema,
-  SessionDocument
+  SessionDocument,
+  ChatModel,
+  SessionModel
 } from "../models/chats.model";
 import { loggers } from "@ainetwork/adk/utils/logger";
-import { Model } from "mongoose";
 
 export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
-  private chatModel: Model<ChatDocument>;
-  private sessionModel: Model<SessionDocument>;
-
-  constructor(uri: string) {
-    super(uri);
-    const _mongoose = super.getInstance();
-    this.chatModel = _mongoose.model<ChatDocument>("Chat", ChatObjectSchema);
-    this.sessionModel = _mongoose.model<SessionDocument>("Session", SessionObjectSchema);
-  }
 
   public async getSession(sessionId: string, userId?: string): Promise<SessionObject | undefined> {
-		const chats = await this.chatModel.find({ sessionId, userId }).sort({
+		const chats = await ChatModel.find({ sessionId, userId }).sort({
 			timestamp: 1,
 		});
-    const session = await this.sessionModel.findOne({ sessionId, userId });
+    const session = await SessionModel.findOne({ sessionId, userId });
 
 		loggers.agent.debug(`Found ${chats.length} chats for session ${sessionId}`);
 
@@ -48,7 +38,7 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
 
 	public async createSession(userId: string, sessionId: string, title: string): Promise<SessionMetadata> {
     const now = Date.now();
-    await this.sessionModel.create({
+    await SessionModel.create({
       sessionId,
       userId,
       title,
@@ -61,10 +51,10 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
 
 	public async addChatToSession(userId: string, sessionId: string, chat: ChatObject): Promise<void> {
     const newId = randomUUID();
-    await this.sessionModel.updateOne({ sessionId, userId }, {
+    await SessionModel.updateOne({ sessionId, userId }, {
       updated_at: Date.now(),
     });
-		await this.chatModel.create({
+		await ChatModel.create({
 			sessionId,
       chatId: newId,
       userId,
@@ -76,7 +66,7 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
   };
 
 	public async deleteSession(userId: string, sessionId: string): Promise<void> {
-		const chats = await this.chatModel.find({ userId, sessionId }).sort({
+		const chats = await ChatModel.find({ userId, sessionId }).sort({
 			timestamp: 1,
 		});
 
@@ -84,12 +74,12 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
       chat.deleteOne();
 		});
     
-    const session = await this.sessionModel.findOne({ sessionId, userId });
+    const session = await SessionModel.findOne({ sessionId, userId });
     session?.deleteOne();
   };
 
 	public async listSessions(userId: string): Promise<SessionMetadata[]> {
-    const sessions = await this.sessionModel.find({ userId }).sort({
+    const sessions = await SessionModel.find({ userId }).sort({
       updated_at: -1,
     });
     const data: SessionMetadata[] = sessions.map((session: SessionDocument) => {

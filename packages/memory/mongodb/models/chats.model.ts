@@ -97,3 +97,9 @@ export interface ChatDocument extends Document {
 	createdAt: Date;
 	updatedAt: Date;
 }
+
+// 모델 export
+import mongoose from "mongoose";
+
+export const ChatModel = mongoose.model<ChatDocument>("Chat", ChatObjectSchema);
+export const SessionModel = mongoose.model<SessionDocument>("Session", SessionObjectSchema);

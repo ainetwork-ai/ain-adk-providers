@@ -18,6 +18,19 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
     return undefined;
   };
 
+	public async getIntentByName(intentName: string): Promise<Intent | undefined> {
+		const intent = await IntentModel.findOne({ name: intentName });
+		if (intent) {
+			return {
+				name: intent.name,
+				description: intent.description,
+				prompt: intent.prompt,
+				llm: intent.llm,
+			} as Intent;
+		}
+		return undefined;
+	}
+
 	public async saveIntent(intent: Intent): Promise<void> {
     // ObjectId automatically generated (MongoDB automatically generates)
     await IntentModel.create({

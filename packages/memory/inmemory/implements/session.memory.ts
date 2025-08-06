@@ -3,6 +3,7 @@ import type { ChatObject, SessionObject, SessionMetadata } from "@ainetwork/adk/
 import { ISessionMemory } from "@ainetwork/adk/modules";
 
 type InMemorySessionObject = {
+  title?: string;
   chats: Map<string, ChatObject>
 }
 
@@ -32,6 +33,7 @@ export class InMemorySession implements ISessionMemory {
     const res = this.sessions.get(key);
     if (res) {
       const sessionObject: SessionObject = {
+        title: res.title,
         chats: Object.fromEntries(res.chats)
       };
       return sessionObject;
@@ -39,27 +41,27 @@ export class InMemorySession implements ISessionMemory {
     return undefined;
   };
 
-	public async createSession(userId: string, sessionId: string): Promise<void> {
+	public async createSession(userId: string, sessionId: string, title: string): Promise<SessionMetadata> {
+    const now = Date.now();
     const key = this.generateKey(userId, sessionId);
     if (!this.userSessionIndex.has(userId)) {
       this.userSessionIndex.set(userId, new Set());
     }
     if (!this.sessions.has(key)) {
-      this.sessions.set(key, { chats: new Map() });
+      this.sessions.set(key, { title, chats: new Map() });
       const metadata: InMemorySessionMetadata = {
-        sessionId, createdAt: Date.now(), updatedAt: Date.now(),
+        sessionId, title, createdAt: now, updatedAt: now,
       }
       this.userSessionIndex.get(userId)?.add(metadata);
     }
+
+    return { title, sessionId, updatedAt: now };
   };
 
 	public async addChatToSession(userId: string, sessionId: string, chat: ChatObject): Promise<void> {
     const key = this.generateKey(userId, sessionId);
+    await this.createSession(userId, sessionId, "New chat");
     const newChatId = randomUUID();
-    if (!this.sessions.has(key)) {
-      await this.createSession(userId, sessionId);
-    }
-    const sessions = this.sessions.get(key);
     this.sessions.get(key)?.chats.set(newChatId, chat);
   };
 

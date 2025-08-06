@@ -24,13 +24,15 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
   }
 
   public async getSession(sessionId: string, userId?: string): Promise<SessionObject | undefined> {
-		const chats = await this.chatModel.find({ sessionId }).sort({
+		const chats = await this.chatModel.find({ sessionId, userId }).sort({
 			timestamp: 1,
 		});
+    const session = await this.sessionModel.findOne({ sessionId, userId });
 
 		loggers.agent.debug(`Found ${chats.length} chats for session ${sessionId}`);
 
 		const sessionObject: SessionObject = { chats: {} };
+    sessionObject.title = session?.title;
 		chats.forEach((chat: ChatDocument) => {
 			const chatId = chat._id?.toString() || chat.id;
 			sessionObject.chats[chatId] = {
@@ -44,25 +46,24 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
 		return sessionObject;
   };
 
-	public async createSession(userId: string, sessionId: string): Promise<void> {
+	public async createSession(userId: string, sessionId: string, title: string): Promise<SessionMetadata> {
+    const now = Date.now();
     await this.sessionModel.create({
       sessionId,
       userId,
-      updated_at: Date.now(),
-      created_at: Date.now(),
+      title,
+      updated_at: now,
+      created_at: now,
     });
+
+    return { title, sessionId, updatedAt: now };
   };
 
 	public async addChatToSession(userId: string, sessionId: string, chat: ChatObject): Promise<void> {
     const newId = randomUUID();
-    const session = await this.sessionModel.findOne({ sessionId, userId });
-    if (!session) {
-      await this.createSession(userId, sessionId);
-    } else {
-      await this.sessionModel.updateOne({ sessionId, userId }, {
-        updated_at: Date.now(),
-      });
-    }
+    await this.sessionModel.updateOne({ sessionId, userId }, {
+      updated_at: Date.now(),
+    });
 		await this.chatModel.create({
 			sessionId,
       chatId: newId,

@@ -59,6 +59,11 @@ export const ChatObjectSchema = new Schema(
 			required: true,
 			index: true,
 		},
+		userId: {
+			type: String,
+			required: true,
+			index: true,
+		},
 		role: {
 			type: String,
 			enum: Object.values(ChatRole),

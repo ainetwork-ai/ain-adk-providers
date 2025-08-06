@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-model-azure",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.1.7",
+    "@ainetwork/adk": "^0.1.9",
     "openai": "^5.10.2"
   },
   "devDependencies": {

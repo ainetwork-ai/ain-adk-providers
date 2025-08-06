@@ -14,10 +14,10 @@
     express "^4.21.2"
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.1.7":
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.1.7.tgz#a7fce90c5e7f7fb3f9590cd1c6eb060b9fce529a"
-  integrity sha512-PwYJdORDN1DpObtyRf7CqgsPQzWOms6tKLSk7vZ2h4remCN49EJrZlWTWE4p+1UZB+EHXmBJQ2N7gbtiYNAqYA==
+"@ainetwork/adk@^0.1.9":
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.1.9.tgz#3c3306482bb1168204a40c8226ba4b5db1dea751"
+  integrity sha512-M084f4IDuWV8YZ0RoXk70jAuhvxCH8yVKev2gFfM8O4NE+LXeCT6lk+/Oi2Ch2k2XoIZubQ3Ua3Pa8SytTh7Wg==
   dependencies:
     "@a2a-js/sdk" "^0.2.4"
     "@modelcontextprotocol/sdk" "^1.12.3"

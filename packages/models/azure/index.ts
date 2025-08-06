@@ -127,7 +127,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 	async fetchStreamWithContextMessage(
 		messages: CCMessageParam[],
 		functions: ChatCompletionTool[],
-	) {
+	): Promise<LLMStream> {
 		const stream = await this.client.chat.completions.create({
 			model: this.modelName,
 			messages,
@@ -135,7 +135,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			tool_choice: "auto",
 			stream: true,
 		});
-		return await this.createOpenAIStreamAdapter(stream);
+		return this.createOpenAIStreamAdapter(stream);
 	}
 
 	// NOTE(yoojin): Need to switch API Stream type to LLMStream.

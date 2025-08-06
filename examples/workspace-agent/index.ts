@@ -107,6 +107,7 @@ Unless otherwise requested, please send the response as is without summarizing.
 		manifest,
 		{ modelModule, mcpModule, memoryModule },
 		authScheme,
+		true
 	);
 
 	agent.start(PORT);

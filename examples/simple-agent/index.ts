@@ -79,8 +79,8 @@ Refer to the usage instructions below for each <tool_type>.
 	const authScheme = new NoAuthScheme();
 
 	const manifest = {
-		name: "Sample Agent",
-		description: "An sample agent",
+		name: "Simple Agent",
+		description: "An simple agent",
 		version: "0.0.2", // Incremented version
 		url: `http://localhost:${PORT}`,
 		prompts: {

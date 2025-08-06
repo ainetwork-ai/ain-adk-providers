@@ -3,7 +3,8 @@
   "version": "independent",
   "packages": [
     "packages/memory/*",
-    "packages/models/*"
+    "packages/models/*",
+    "packages/auth/*"
   ],
   "npmClient": "yarn"
 }

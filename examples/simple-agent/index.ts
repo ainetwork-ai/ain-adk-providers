@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
-// import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
+import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { BaseAuth, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
 import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
 import { AINAgent } from "@ainetwork/adk";
@@ -24,6 +24,12 @@ async function main() {
 		process.env.AZURE_OPENAI_MODEL_NAME!,
 	);
 	modelModule.addModel('azure-gpt-4o', azureModel);
+
+	const geminiModel = new GeminiModel(
+		process.env.GEMINI_API_KEY!,
+		process.env.GEMINI_MODEL_NAME!,
+	);
+	modelModule.addModel('gemini-2.5', geminiModel);
 
 	const memoryModule = new MemoryModule({
 		session: new InMemorySession(),

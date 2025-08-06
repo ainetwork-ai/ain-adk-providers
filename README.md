@@ -16,6 +16,10 @@ This repository is managed using [Lerna](https://lerna.js.org/) and [Yarn Worksp
 -   [`packages/memory/inmemory`](./packages/memory/inmemory/): A simple, non-persistent in-memory provider for agent state and conversation history.
 -   [`packages/memory/mongodb`](./packages/memory/mongodb/): A persistent memory provider using MongoDB to store agent data.
 
+### Auth Providers
+
+-   [`packages/auth/firebase`](./packages/auth/firebase/): A provider to integrate with Firebase auth.
+
 ## Getting Started
 
 To see how to use this package in your project, check out our comprehensive examples:

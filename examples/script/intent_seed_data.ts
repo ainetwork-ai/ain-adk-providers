@@ -43,8 +43,11 @@ const dummyIntents = [
   {
     name: "electing_user_value_daily_winners",
     description: "'user value daily' 슬랙 채널에서 우수한 성적을 받은 사용자를 선정하는 인텐트",
-    prompt: "1. slack #user-value-daily 채널에서 메세지를 가져온다\n"+
-    "2. comcom notion의 ㅇㅇㅇ정보를 참고하여 메세지를 평가한다.",
+    prompt: "1. slack #user-value-daily 채널에서 메세지를 가져온다.\n"+
+    "2. comcom notion의 life at comcom 문서에 정리된 정보를 가져온다.\n"+
+    "3. 문서를 참고하여 각 메세지에 대한 점수를 매긴다.\n"+
+    "4. 평균적으로 가장 높은 점수를 받은 사용자를 선정한다.\n"+
+    "5. 선정된 사용자들의 이름과 점수, 그 이유를 반환한다.",
     llm: "gpt-4o"
   }
 ];

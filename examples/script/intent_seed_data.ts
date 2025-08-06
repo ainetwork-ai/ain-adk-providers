@@ -3,7 +3,7 @@ import "dotenv/config";
 
 import mongoose from "mongoose";
 import { IntentModel } from "../../packages/memory/mongodb/models/intent.model";
-console.log(process.env.MONGO_DB_CONNECTION_STRING);
+
 // 더미 데이터 정의
 const dummyIntents = [
   {

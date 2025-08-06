@@ -164,11 +164,11 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 												name: geminiChunk.candidates?.[0]?.content?.parts?.[0]
 													?.functionCall?.name,
 												arguments:
-													geminiChunk.candidates?.[0]?.content?.parts?.[0]
-														?.functionCall?.args,
+                          JSON.stringify(geminiChunk.candidates?.[0]?.content?.parts?.[0]
+                            ?.functionCall?.args),
 											},
 										},
-									] as ToolCallDelta[])
+									])
 								: undefined,
 						},
 						finish_reason: geminiChunk.candidates?.[0]?.finishReason as any,

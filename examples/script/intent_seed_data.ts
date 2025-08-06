@@ -1,7 +1,9 @@
 // npx tsx examples/script/intent_seed_data.ts
+import "dotenv/config";
+
 import mongoose from "mongoose";
 import { IntentModel } from "../../packages/memory/mongodb/models/intent.model";
-
+console.log(process.env.MONGO_DB_CONNECTION_STRING);
 // 더미 데이터 정의
 const dummyIntents = [
   {
@@ -63,6 +65,12 @@ async function seedIntentData() {
     console.log("MongoDB에 연결 중...");
     await mongoose.connect(connectionString);
     console.log("MongoDB 연결 성공!");
+    // 데이터베이스 및 컬렉션 정보 출력
+    const dbName = mongoose.connection.db?.databaseName || "unknown";
+    const collectionName = IntentModel.collection.name;
+    console.log(`\n📊 데이터베이스 정보:`);
+    console.log(`   데이터베이스: ${dbName}`);
+    console.log(`   컬렉션: ${collectionName}`);
 
     // 기존 데이터 삭제 (선택사항)
     console.log("기존 Intent 데이터 삭제 중...");
@@ -80,9 +88,11 @@ async function seedIntentData() {
     allIntents.forEach((intent, index) => {
       console.log(`${index + 1}. ${intent.name} - ${intent.description}`);
     });
+    console.log(`\n   총 문서 수: ${allIntents.length}개`);
 
   } catch (error) {
     console.error("데이터 삽입 중 오류 발생:", error);
+    process.exit(1);
   } finally {
     // 연결 종료
     await mongoose.disconnect();

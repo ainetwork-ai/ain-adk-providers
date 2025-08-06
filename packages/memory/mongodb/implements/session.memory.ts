@@ -27,10 +27,12 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
 		const chats = await this.chatModel.find({ sessionId, userId }).sort({
 			timestamp: 1,
 		});
+    const session = await this.sessionModel.findOne({ sessionId, userId });
 
 		loggers.agent.debug(`Found ${chats.length} chats for session ${sessionId}`);
 
 		const sessionObject: SessionObject = { chats: {} };
+    sessionObject.title = session?.title;
 		chats.forEach((chat: ChatDocument) => {
 			const chatId = chat._id?.toString() || chat.id;
 			sessionObject.chats[chatId] = {
@@ -49,6 +51,7 @@ export class MongoDBSession extends MongoDBMemory implements ISessionMemory {
     await this.sessionModel.create({
       sessionId,
       userId,
+      title,
       updated_at: now,
       created_at: now,
     });

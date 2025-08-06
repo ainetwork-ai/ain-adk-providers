@@ -3,6 +3,7 @@ import type { ChatObject, SessionObject, SessionMetadata } from "@ainetwork/adk/
 import { ISessionMemory } from "@ainetwork/adk/modules";
 
 type InMemorySessionObject = {
+  title?: string;
   chats: Map<string, ChatObject>
 }
 
@@ -32,6 +33,7 @@ export class InMemorySession implements ISessionMemory {
     const res = this.sessions.get(key);
     if (res) {
       const sessionObject: SessionObject = {
+        title: res.title,
         chats: Object.fromEntries(res.chats)
       };
       return sessionObject;
@@ -46,9 +48,9 @@ export class InMemorySession implements ISessionMemory {
       this.userSessionIndex.set(userId, new Set());
     }
     if (!this.sessions.has(key)) {
-      this.sessions.set(key, { chats: new Map() });
+      this.sessions.set(key, { title, chats: new Map() });
       const metadata: InMemorySessionMetadata = {
-        sessionId, createdAt: now, updatedAt: now,
+        sessionId, title, createdAt: now, updatedAt: now,
       }
       this.userSessionIndex.get(userId)?.add(metadata);
     }

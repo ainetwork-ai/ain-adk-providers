@@ -14,20 +14,10 @@
     express "^4.21.2"
     uuid "^11.1.0"
 
-"@ainetwork/adk@file:../ain-adk":
+"@ainetwork/adk@^0.1.12":
   version "0.1.12"
-  dependencies:
-    "@a2a-js/sdk" "^0.2.4"
-    "@modelcontextprotocol/sdk" "^1.12.3"
-    cors "^2.8.5"
-    dotenv "^16.5.0"
-    express "^5.1.0"
-    http-status-codes "^2.3.0"
-    uuid "^11.1.0"
-    winston "^3.17.0"
-
-"@ainetwork/adk@file:/Users/shyun/comcom/ain-agent/ain-adk":
-  version "0.1.12"
+  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.1.12.tgz#d9e7a75902eec95df25fca1ccbe612c3a68b1dc1"
+  integrity sha512-Q7Qc5WVbUTRYaOAJEKFQroZfGJGrth6joEPMslMgnaw2VDmrKdlnS4RGRirbkfJPUU2rUmCBIRT+FRggUbdjCQ==
   dependencies:
     "@a2a-js/sdk" "^0.2.4"
     "@modelcontextprotocol/sdk" "^1.12.3"

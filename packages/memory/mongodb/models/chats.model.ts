@@ -1,13 +1,7 @@
+import { MessageRole, ThreadType } from "@ainetwork/adk/types/memory";
 import { type Document, Schema } from "mongoose";
 
-// ChatRole enum
-export enum ChatRole {
-	USER = "USER",
-	SYSTEM = "SYSTEM",
-	MODEL = "MODEL",
-}
-
-export const SessionObjectSchema = new Schema(
+export const ThreadObjectSchema = new Schema(
 	{
 		sessionId: {
 			type: String,
@@ -34,10 +28,11 @@ export const SessionObjectSchema = new Schema(
 	},
 );
 
-export interface SessionDocument extends Document {
-	sessionId: string;
+export interface ThreadDocument extends Document {
+	type: ThreadType;
+	threadId: string;
 	userId: string;
-	title?: string;
+	title: string;
 	created_at: number;
 	updated_at: number;
 }
@@ -54,7 +49,7 @@ export const ChatContentObjectSchema = new Schema(
 // ChatObject schema - 개별 문서로 저장
 export const ChatObjectSchema = new Schema(
 	{
-		sessionId: {
+		threadId: {
 			type: String,
 			required: true,
 			index: true,
@@ -65,8 +60,7 @@ export const ChatObjectSchema = new Schema(
 			index: true,
 		},
 		role: {
-			type: String,
-			enum: Object.values(ChatRole),
+			type: MessageRole,
 			required: true,
 		},
 		content: {
@@ -86,8 +80,8 @@ export const ChatObjectSchema = new Schema(
 
 // Chat Document interface
 export interface ChatDocument extends Document {
-	sessionId: string;
-	role: ChatRole;
+	threadId: string;
+	role: MessageRole;
 	content: {
 		type: string;
 		parts: any[];

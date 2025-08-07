@@ -3,7 +3,7 @@ import { type Document, Schema } from "mongoose";
 
 export const ThreadObjectSchema = new Schema(
 	{
-		sessionId: {
+		threadId: {
 			type: String,
 			required: true,
 			index: true,
@@ -60,7 +60,8 @@ export const ChatObjectSchema = new Schema(
 			index: true,
 		},
 		role: {
-			type: MessageRole,
+			type: String,
+			enum: Object.values(MessageRole),
 			required: true,
 		},
 		content: {

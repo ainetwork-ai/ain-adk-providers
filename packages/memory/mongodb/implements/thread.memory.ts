@@ -20,18 +20,18 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     super(uri);
     const _mongoose = super.getInstance();
     this.chatModel = _mongoose.model<ChatDocument>("Chat", ChatObjectSchema);
-    this.threadModel = _mongoose.model<ThreadDocument>("Session", ThreadObjectSchema);
+    this.threadModel = _mongoose.model<ThreadDocument>("Thread", ThreadObjectSchema);
   }
 
-  public async getThread(userId: string, sessionId: string): Promise<ThreadObject | undefined> {
-    const thread = await this.threadModel.findOne({ sessionId, userId });
-		const chats = await this.chatModel.find({ sessionId, userId }).sort({
+  public async getThread(userId: string, threadId: string): Promise<ThreadObject | undefined> {
+    const thread = await this.threadModel.findOne({ threadId, userId });
+		const chats = await this.chatModel.find({ threadId, userId }).sort({
 			timestamp: 1,
 		});
 
     if (!thread) return undefined;
 
-		loggers.agent.debug(`Found ${chats.length} chats for session ${sessionId}`);
+		loggers.agent.debug(`Found ${chats.length} chats for thread ${threadId}`);
 
 		const threadObject: ThreadObject = { 
       type: thread.type as ThreadType,
@@ -70,13 +70,13 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     return { type, threadId, title, updatedAt: now };
   };
 
-	public async addMessageToThread(userId: string, sessionId: string, message: MessageObject): Promise<void> {
+	public async addMessageToThread(userId: string, threadId: string, message: MessageObject): Promise<void> {
     const newId = randomUUID();
-    await this.threadModel.updateOne({ sessionId, userId }, {
+    await this.threadModel.updateOne({ threadId, userId }, {
       updated_at: Date.now(),
     });
 		await this.chatModel.create({
-			sessionId,
+			threadId,
       chatId: newId,
       userId,
 			role: message.role,

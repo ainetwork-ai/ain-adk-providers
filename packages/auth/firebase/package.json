@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.1.12",
+    "@ainetwork/adk": "^0.1.13",
     "firebase-admin": "^12.0.0"
   },
   "devDependencies": {

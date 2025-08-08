@@ -3,12 +3,8 @@ import type { MessageObject, ThreadMetadata, ThreadObject, ThreadType } from "@a
 import { MessageRole } from "@ainetwork/adk/types/memory";
 import { IThreadMemory } from "@ainetwork/adk/modules";
 import { MongoDBMemory } from "./base.memory";
-import {
-	MessageDocument,
-  MessageModel,
-  ThreadDocument,
-  ThreadModel
-} from "../models/threads.model";
+import { ThreadDocument, ThreadModel } from "../models/threads.model";
+import { MessageDocument, MessageModel } from "../models/messages.model";
 import { loggers } from "@ainetwork/adk/utils/logger";
 
 export class MongoDBThread extends MongoDBMemory implements IThreadMemory {

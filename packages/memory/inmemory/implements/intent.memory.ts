@@ -15,6 +15,10 @@ export class InMemoryIntent implements IIntentMemory {
     return this.intents.get(intentId);
   };
 
+  public async getIntentByName(intentName: string): Promise<Intent | undefined> {
+    return Array.from(this.intents.values()).find(intent => intent.name === intentName);
+  };
+
 	public async saveIntent(intent: Intent): Promise<void> {
     const newId = randomUUID();
     this.intents.set(newId, intent);

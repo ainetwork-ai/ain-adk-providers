@@ -30,7 +30,11 @@ export class InMemoryThread implements IThreadMemory {
     return `${userId}:${threadId}`;
   }
 
-  public async getThread(userId: string, threadId: string): Promise<ThreadObject | undefined> {
+  public async getThread(
+    type: ThreadType,
+    userId: string,
+    threadId: string
+  ): Promise<ThreadObject | undefined> {
     const key = this.generateKey(userId, threadId);
     const res = this.threads.get(key);
     if (res) {

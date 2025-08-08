@@ -23,8 +23,12 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     this.threadModel = _mongoose.model<ThreadDocument>("Thread", ThreadObjectSchema);
   }
 
-  public async getThread(userId: string, threadId: string): Promise<ThreadObject | undefined> {
-    const thread = await this.threadModel.findOne({ threadId, userId });
+  public async getThread(
+    type: ThreadType,
+    userId: string,
+    threadId: string
+  ): Promise<ThreadObject | undefined> {
+    const thread = await this.threadModel.findOne({ type, threadId, userId });
 		const chats = await this.chatModel.find({ threadId, userId }).sort({
 			timestamp: 1,
 		});

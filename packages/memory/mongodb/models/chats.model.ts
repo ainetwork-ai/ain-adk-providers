@@ -3,6 +3,11 @@ import { type Document, Schema } from "mongoose";
 
 export const ThreadObjectSchema = new Schema(
 	{
+		type: {
+			type: String,
+			enum: Object.values(ThreadType),
+			required: true,
+		},
 		threadId: {
 			type: String,
 			required: true,

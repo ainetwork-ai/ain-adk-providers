@@ -3,7 +3,7 @@ import "dotenv/config";
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
 import { MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { InMemorySession, InMemoryIntent } from "@ainetwork/adk-provider-memory-inmemory";
+import { InMemoryThread, InMemoryIntent } from "../../packages/memory/inmemory";
 import { AINAgent } from "@ainetwork/adk";
 import { FirebaseAuth } from "@ainetwork/adk-provider-auth-firebase";
 
@@ -23,7 +23,7 @@ async function main() {
   modelModule.addModel("gemini-2.5", geminiModel);
 
   const memoryModule = new MemoryModule({
-    session: new InMemorySession(),
+    thread: new InMemoryThread(),
     intent: new InMemoryIntent(),
   });
 

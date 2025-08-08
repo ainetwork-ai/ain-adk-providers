@@ -3,7 +3,7 @@ import "dotenv/config";
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
 import { BaseAuth, MCPModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { MongoDBSession, MongoDBIntent } from "@ainetwork/adk-provider-memory-mongodb";
+import { MongoDBThread, MongoDBIntent } from "../../packages/memory/mongodb";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 
@@ -53,7 +53,7 @@ async function main() {
 	});
 
 	const memoryModule = new MemoryModule({
-		session: new MongoDBSession(process.env.MONGO_DB_CONNECTION_STRING!),
+		thread: new MongoDBThread(process.env.MONGO_DB_CONNECTION_STRING!),
 		intent: new MongoDBIntent(process.env.MONGO_DB_CONNECTION_STRING!),
 	});
 

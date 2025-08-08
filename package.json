@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/memory/*",
     "packages/models/*",
-    "packages/auth/*"
+    "packages/auth/*",
+    "examples/*"
   ],
   "scripts": {
     "build": "lerna run build",

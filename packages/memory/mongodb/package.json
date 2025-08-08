@@ -13,12 +13,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
     "./models/*": {
       "types": "./dist/models/*.d.ts",
       "import": "./dist/models/*.js",
-      "require": "./dist/models/*.cjs"
+      "require": "./dist/models/*.cjs",
+      "default": "./dist/models/*.js"
     }
   },
   "scripts": {
@@ -26,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.1.9",
+    "@ainetwork/adk": "^0.1.13",
     "mongoose": "^8.16.5"
   },
   "devDependencies": {

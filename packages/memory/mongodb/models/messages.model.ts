@@ -42,8 +42,8 @@ export interface ThreadDocument extends Document {
 	updated_at: number;
 }
 
-// ChatContentObject schema
-export const ChatContentObjectSchema = new Schema(
+// MessageContentObject schema
+export const MessageContentObjectSchema = new Schema(
 	{
 		type: { type: String, required: true },
 		parts: { type: [Schema.Types.Mixed], required: true },
@@ -51,8 +51,8 @@ export const ChatContentObjectSchema = new Schema(
 	{ _id: false },
 );
 
-// ChatObject schema - 개별 문서로 저장
-export const ChatObjectSchema = new Schema(
+// MessageObject schema - 개별 문서로 저장
+export const MessageObjectSchema = new Schema(
 	{
 		threadId: {
 			type: String,
@@ -70,7 +70,7 @@ export const ChatObjectSchema = new Schema(
 			required: true,
 		},
 		content: {
-			type: ChatContentObjectSchema,
+			type: MessageContentObjectSchema,
 			required: true,
 		},
 		timestamp: {
@@ -84,8 +84,8 @@ export const ChatObjectSchema = new Schema(
 	},
 );
 
-// Chat Document interface
-export interface ChatDocument extends Document {
+// Message Document interface
+export interface MessageDocument extends Document {
 	threadId: string;
 	role: MessageRole;
 	content: {
@@ -101,5 +101,5 @@ export interface ChatDocument extends Document {
 // 모델 export
 import mongoose from "mongoose";
 
-export const ChatModel = mongoose.model<ChatDocument>("Chat", ChatObjectSchema);
-export const SessionModel = mongoose.model<SessionDocument>("Session", SessionObjectSchema);
+export const MessageModel = mongoose.model<MessageDocument>("Message", MessageObjectSchema);
+export const ThreadModel = mongoose.model<ThreadDocument>("Thread", ThreadObjectSchema);

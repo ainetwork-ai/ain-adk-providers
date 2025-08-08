@@ -4,23 +4,16 @@ import { MessageRole } from "@ainetwork/adk/types/memory";
 import { IThreadMemory } from "@ainetwork/adk/modules";
 import { MongoDBMemory } from "./base.memory";
 import {
-	ChatDocument,
-  ChatObjectSchema,
-  ThreadObjectSchema,
-  ThreadDocument
-} from "../models/chats.model";
+	MessageDocument,
+  MessageModel,
+  ThreadDocument,
+  ThreadModel
+} from "../models/threads.model";
 import { loggers } from "@ainetwork/adk/utils/logger";
-import { Model } from "mongoose";
 
 export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
-  private chatModel: Model<ChatDocument>;
-  private threadModel: Model<ThreadDocument>;
-
   constructor(uri: string) {
     super(uri);
-    const _mongoose = super.getInstance();
-    this.chatModel = _mongoose.model<ChatDocument>("Chat", ChatObjectSchema);
-    this.threadModel = _mongoose.model<ThreadDocument>("Thread", ThreadObjectSchema);
   }
 
   public async getThread(
@@ -28,27 +21,27 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     userId: string,
     threadId: string
   ): Promise<ThreadObject | undefined> {
-    const thread = await this.threadModel.findOne({ type, threadId, userId });
-		const chats = await this.chatModel.find({ threadId, userId }).sort({
+    const thread = await ThreadModel.findOne({ type, threadId, userId });
+		const messages = await MessageModel.find({ threadId, userId }).sort({
 			timestamp: 1,
 		});
 
     if (!thread) return undefined;
 
-		loggers.agent.debug(`Found ${chats.length} chats for thread ${threadId}`);
+		loggers.agent.debug(`Found ${messages.length} messages for thread ${threadId}`);
 
 		const threadObject: ThreadObject = { 
       type: thread.type as ThreadType,
-      title: thread.title || "New chats",
+      title: thread.title || "New thread",
       messages: {}
     };
-		chats.forEach((chat: ChatDocument) => {
-			const chatId = chat._id?.toString() || chat.id;
-			threadObject.messages[chatId] = {
-				role: chat.role as MessageRole,
-				content: chat.content,
-				timestamp: chat.timestamp,
-				metadata: chat.metadata,
+		messages.forEach((message: MessageDocument) => {
+			const messageId = message._id?.toString() || message.id;
+			threadObject.messages[messageId] = {
+				role: message.role as MessageRole,
+				content: message.content,
+				timestamp: message.timestamp,
+				metadata: message.metadata,
 			};
 		});
 
@@ -62,7 +55,7 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
 		title: string,
   ): Promise<ThreadMetadata> {
     const now = Date.now();
-    await this.threadModel.create({
+    await ThreadModel.create({
       type,
       userId,
       threadId,
@@ -79,14 +72,14 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     threadId: string,
     messages: MessageObject[]
   ): Promise<void> {
-    await this.threadModel.updateOne({ threadId, userId }, {
+    await ThreadModel.updateOne({ threadId, userId }, {
       updated_at: Date.now(),
     });
     for (const message of messages) {
       const newId = randomUUID();
-      await this.chatModel.create({
+      await MessageModel.create({
         threadId,
-        chatId: newId,
+        messageId: newId,
         userId,
         role: message.role,
         content: message.content,
@@ -97,20 +90,20 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
   };
 
 	public async deleteThread(userId: string, threadId: string): Promise<void> {
-		const chats = await this.chatModel.find({ userId, threadId }).sort({
+		const messages = await MessageModel.find({ userId, threadId }).sort({
 			timestamp: 1,
 		});
 
-		chats?.forEach((chat: ChatDocument) => {
-      chat.deleteOne();
+		messages?.forEach((message: MessageDocument) => {
+      message.deleteOne();
 		});
     
-    const thread = await this.threadModel.findOne({ userId, threadId });
+    const thread = await ThreadModel.findOne({ userId, threadId });
     thread?.deleteOne();
   };
 
 	public async listThreads(userId: string): Promise<ThreadMetadata[]> {
-    const threads = await this.threadModel.find({ userId }).sort({
+    const threads = await ThreadModel.find({ userId }).sort({
       updated_at: -1,
     });
     const data: ThreadMetadata[] = threads.map((thread: ThreadDocument) => {

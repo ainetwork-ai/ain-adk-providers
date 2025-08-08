@@ -14,12 +14,6 @@
     express "^4.21.2"
     uuid "^11.1.0"
 
-"@ainetwork/adk-provider-memory-mongodb@file:packages/memory/mongodb":
-  version "0.1.6"
-  dependencies:
-    "@ainetwork/adk" "^0.1.13"
-    mongoose "^8.16.5"
-
 "@ainetwork/adk@^0.1.13":
   version "0.1.13"
   resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.1.13.tgz#ffd7e34fb58382fed0e8646e5ef3c69f95effce6"

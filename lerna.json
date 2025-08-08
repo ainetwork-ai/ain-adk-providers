@@ -12,10 +12,6 @@
     "publish": {
       "ignoreChanges": ["examples/**"],
       "message": "chore(release): publish"
-    },
-    "version": {
-      "allowBranch": ["main", "master"],
-      "conventionalCommits": true
     }
   }
 }

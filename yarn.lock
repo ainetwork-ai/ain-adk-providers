@@ -14,20 +14,6 @@
     express "^4.21.2"
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.1.13":
-  version "0.1.13"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.1.13.tgz#ffd7e34fb58382fed0e8646e5ef3c69f95effce6"
-  integrity sha512-bAWVug00cGUdPSs/BxwhAutbLHWQnjVrcgeggjDgYdaelgoMy8nhqtk48I+TICyulVCxBD3PwC77gJMuuEF8XQ==
-  dependencies:
-    "@a2a-js/sdk" "^0.2.4"
-    "@modelcontextprotocol/sdk" "^1.12.3"
-    cors "^2.8.5"
-    dotenv "^16.5.0"
-    express "^5.1.0"
-    http-status-codes "^2.3.0"
-    uuid "^11.1.0"
-    winston "^3.17.0"
-
 "@ainetwork/adk@^0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.2.0.tgz#2cf679a7a2126a154c0257c3a049d551664d20dd"

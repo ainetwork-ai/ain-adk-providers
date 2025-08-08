@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-memory-mongodb",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {

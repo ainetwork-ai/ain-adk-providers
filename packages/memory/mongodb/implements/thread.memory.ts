@@ -70,20 +70,26 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     return { type, threadId, title, updatedAt: now };
   };
 
-	public async addMessageToThread(userId: string, threadId: string, message: MessageObject): Promise<void> {
-    const newId = randomUUID();
+	public async addMessagesToThread(
+    userId: string,
+    threadId: string,
+    messages: MessageObject[]
+  ): Promise<void> {
     await this.threadModel.updateOne({ threadId, userId }, {
       updated_at: Date.now(),
     });
-		await this.chatModel.create({
-			threadId,
-      chatId: newId,
-      userId,
-			role: message.role,
-			content: message.content,
-			timestamp: message.timestamp,
-			metadata: message.metadata,
-		});
+    for (const message of messages) {
+      const newId = randomUUID();
+      await this.chatModel.create({
+        threadId,
+        chatId: newId,
+        userId,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp,
+        metadata: message.metadata,
+      });
+    }
   };
 
 	public async deleteThread(userId: string, threadId: string): Promise<void> {

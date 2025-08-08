@@ -1,12 +1,12 @@
-import { randomUUID } from "node:crypto";
 import type { Intent } from "@ainetwork/adk/types/memory";
 import { IIntentMemory } from "@ainetwork/adk/modules";
 import { MongoDBMemory } from "./base.memory";
 import { IntentModel } from "../models/intent.model";
+import { Types } from "mongoose";
 
 export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
   public async getIntent(intentId: string): Promise<Intent | undefined> {
-    const intent = await IntentModel.findById(intentId);
+    const intent = await IntentModel.findById(new Types.ObjectId(intentId));
     if (intent) {
       return {
         name: intent.name,
@@ -18,10 +18,22 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
     return undefined;
   };
 
+	public async getIntentByName(intentName: string): Promise<Intent | undefined> {
+		const intent = await IntentModel.findOne({ name: intentName });
+		if (intent) {
+			return {
+				name: intent.name,
+				description: intent.description,
+				prompt: intent.prompt,
+				llm: intent.llm,
+			} as Intent;
+		}
+		return undefined;
+	}
+
 	public async saveIntent(intent: Intent): Promise<void> {
-    const newId = randomUUID();
+    // ObjectId automatically generated (MongoDB automatically generates)
     await IntentModel.create({
-      _id: newId,
       name: intent.name,
       description: intent.description,
       prompt: intent.prompt,
@@ -31,7 +43,7 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
 
 	public async updateIntent(intentId: string, intent: Intent): Promise<void> {
     await IntentModel.updateOne({
-      _id: intentId,
+      _id: new Types.ObjectId(intentId),
     },{
       name: intent.name,
       description: intent.description,
@@ -41,7 +53,7 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
   };
 
 	public async deleteIntent(intentId: string): Promise<void> {
-    await IntentModel.deleteOne({ _id: intentId });
+    await IntentModel.deleteOne({ _id: new Types.ObjectId(intentId) });
   };
 
 	public async listIntents(): Promise<Intent[]> {

@@ -1,19 +1,13 @@
 import { IMemory } from "node_modules/@ainetwork/adk/dist/esm/modules/memory/base.memory";
-import mongoose, { Mongoose } from "mongoose";
+import mongoose from "mongoose";
 import { loggers } from "@ainetwork/adk/utils/logger";
 
 export class MongoDBMemory implements IMemory {
   private _isConnected: boolean = false;
   private _uri: string;
-  private _mongoose: Mongoose;
 
   constructor(uri: string) {
     this._uri = uri;
-    this._mongoose = new Mongoose();
-  }
-
-  public getInstance(): Mongoose {
-    return this._mongoose;
   }
 
   public async connect(): Promise<void> {
@@ -22,7 +16,13 @@ export class MongoDBMemory implements IMemory {
 		}
 
 		try {
-      await this._mongoose.connect(this._uri);
+      await mongoose.connect(this._uri, {
+        maxPoolSize: 1,
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 30000,
+        bufferCommands: false,
+      });
 			this._isConnected = true;
 			loggers.agent.info("MongoDB connected successfully");
 		} catch (error) {
@@ -37,7 +37,7 @@ export class MongoDBMemory implements IMemory {
 		}
 
 		try {
-			await this._mongoose?.disconnect();
+			await mongoose.disconnect();
 			this._isConnected = false;
 			loggers.agent.info("MongoDB disconnected successfully");
 		} catch (error) {

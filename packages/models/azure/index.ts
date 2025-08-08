@@ -1,5 +1,5 @@
 import { BaseModel } from "@ainetwork/adk/modules";
-import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
+import { MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
@@ -40,12 +40,12 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		this.modelName = modelName;
 	}
 
-	private getMessageRole(role: ChatRole) {
+	private getMessageRole(role: MessageRole) {
 		switch (role) {
-			case ChatRole.USER:
+			case MessageRole.USER:
 				return "user";
-			case ChatRole.MODEL:
-			case ChatRole.SYSTEM:
+			case MessageRole.MODEL:
+			case MessageRole.SYSTEM:
 				return "system";
 			default:
 				return "system"; /*FIXME*/
@@ -54,17 +54,17 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 
 	generateMessages(params: {
 		query: string;
-		sessionHistory?: SessionObject;
+		thread?: ThreadObject;
 		systemPrompt?: string;
 	}): CCMessageParam[] {
-		const { query, sessionHistory, systemPrompt } = params;
+		const { query, thread, systemPrompt } = params;
 		const messages: CCMessageParam[] = !systemPrompt
 			? []
 			: [{ role: "system", content: systemPrompt.trim() }];
-		const sessionContent: CCMessageParam[] = !sessionHistory
+		const sessionContent: CCMessageParam[] = !thread
 			? []
-			: Object.keys(sessionHistory.chats).map((chatId: string) => {
-					const chat = sessionHistory.chats[chatId];
+			: Object.keys(thread.messages).map((chatId: string) => {
+					const chat = thread.messages[chatId];
 					return {
 						role: this.getMessageRole(chat.role),
 						content: chat.content.parts[0],

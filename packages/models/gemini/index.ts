@@ -1,9 +1,8 @@
 import { BaseModel } from "@ainetwork/adk/modules";
-import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
+import { MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
-	ToolCallDelta,
 } from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
@@ -31,12 +30,12 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		this.modelName = modelName;
 	}
 
-	private getMessageRole(role: ChatRole) {
+	private getMessageRole(role: MessageRole) {
 		switch (role) {
-			case ChatRole.USER:
+			case MessageRole.USER:
 				return "user";
-			case ChatRole.MODEL:
-			case ChatRole.SYSTEM:
+			case MessageRole.MODEL:
+			case MessageRole.SYSTEM:
 				return "model";
 			default:
 				return "model"; /*FIXME*/
@@ -45,17 +44,17 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 
 	generateMessages(params: {
 		query: string;
-		sessionHistory?: SessionObject;
+		thread?: ThreadObject;
 		systemPrompt?: string;
 	}): Content[] {
-		const { query, sessionHistory, systemPrompt } = params;
+		const { query, thread, systemPrompt } = params;
 		const messages: Content[] = !systemPrompt
 			? []
 			: [{ role: "model", parts: [{ text: systemPrompt.trim() }] }];
-		const sessionContent: Content[] = !sessionHistory
+		const sessionContent: Content[] = !thread
 			? []
-			: Object.keys(sessionHistory.chats).map((chatId: string) => {
-					const chat = sessionHistory.chats[chatId];
+			: Object.keys(thread.messages).map((chatId: string) => {
+					const chat = thread.messages[chatId];
 					// TODO: check message.content.type
 					return {
 						role: this.getMessageRole(chat.role),

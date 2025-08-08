@@ -4,7 +4,14 @@
   "packages": [
     "packages/memory/*",
     "packages/models/*",
-    "packages/auth/*"
+    "packages/auth/*",
+    "examples/*"
   ],
-  "npmClient": "yarn"
+  "npmClient": "yarn",
+  "command": {
+    "publish": {
+      "ignoreChanges": ["examples/**"],
+      "message": "chore(release): publish"
+    }
+  }
 }

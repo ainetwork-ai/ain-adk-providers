@@ -5,12 +5,13 @@
   "workspaces": [
     "packages/memory/*",
     "packages/models/*",
-    "packages/auth/*"
+    "packages/auth/*",
+    "examples/*"
   ],
   "scripts": {
     "build": "lerna run build",
     "clean": "lerna run clean && lerna clean",
-    "publish:lerna": "lerna run build && lerna publish",
+    "publish:lerna": "lerna run build && lerna publish --no-private",
     "lint": "npx @biomejs/biome check",
     "lint:write": "npx @biomejs/biome check --write",
     "update:adk": "lerna exec --concurrency 1 -- yarn add @ainetwork/adk"

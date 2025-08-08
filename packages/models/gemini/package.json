@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-model-gemini",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.1.9",
+    "@ainetwork/adk": "^0.1.13",
     "@google/genai": "^1.11.0"
   },
   "devDependencies": {

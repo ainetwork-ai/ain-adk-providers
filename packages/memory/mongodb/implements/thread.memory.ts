@@ -13,11 +13,10 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
   }
 
   public async getThread(
-    type: ThreadType,
     userId: string,
     threadId: string
   ): Promise<ThreadObject | undefined> {
-    const thread = await ThreadModel.findOne({ type, threadId, userId });
+    const thread = await ThreadModel.findOne({ threadId, userId });
 		const messages = await MessageModel.find({ threadId, userId }).sort({
 			timestamp: 1,
 		});
@@ -67,10 +66,11 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     userId: string,
     threadId: string,
     messages: MessageObject[]
-  ): Promise<void> {
+  ): Promise<string[]> {
     await ThreadModel.updateOne({ threadId, userId }, {
       updated_at: Date.now(),
     });
+    const messageIds: string[] = [];
     for (const message of messages) {
       const newId = randomUUID();
       await MessageModel.create({
@@ -82,7 +82,9 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
         timestamp: message.timestamp,
         metadata: message.metadata,
       });
+      messageIds.push(newId);
     }
+    return messageIds;
   };
 
 	public async deleteThread(userId: string, threadId: string): Promise<void> {

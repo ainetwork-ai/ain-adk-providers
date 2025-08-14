@@ -31,7 +31,6 @@ export class InMemoryThread implements IThreadMemory {
   }
 
   public async getThread(
-    type: ThreadType,
     userId: string,
     threadId: string
   ): Promise<ThreadObject | undefined> {
@@ -74,13 +73,16 @@ export class InMemoryThread implements IThreadMemory {
     userId: string,
     threadId: string,
     messages: MessageObject[]
-  ): Promise<void> {
+  ): Promise<string[]> {
     const key = this.generateKey(userId, threadId);
     const thread = this.threads.get(key);
+    const messageIds: string[] = [];
     for (const message of messages) {
       const newMessageId = randomUUID();
       thread?.messages.set(newMessageId, message);
+      messageIds.push(newMessageId);
     }
+    return messageIds;
   };
 
 	public async deleteThread(userId: string, threadId: string): Promise<void> {

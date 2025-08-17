@@ -26,29 +26,33 @@ async function main() {
 	modelModule.addModel('azure-gpt-4o', azureModel);
 
 	const mcpModule = new MCPModule();
-	await mcpModule.addMCPConfig({
-		notionApi: {
-			command: "npx",
-			args: ["-y", "@notionhq/notion-mcp-server"],
-			env: {
-				...getDefaultEnvironment(),
-				OPENAPI_MCP_HEADERS: `{\"Authorization\": \"Bearer ${process.env.NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\" }`,
-			},
-		},
-	});
-	await mcpModule.addMCPConfig({
+	mcpModule.addMCPServerConfig({
 		slack: {
-			command: "npx",
-			args: [
-				"-y",
-        "slack-mcp-server@latest",
-        "--transport",
-        "stdio"
-      ],
-			env: {
-				...getDefaultEnvironment(),
-				SLACK_MCP_XOXP_TOKEN: process.env.SLACK_MCP_XOXP_TOKEN!
-			},
+			type: "stdio",
+			params: {
+				command: "npx",
+				args: [
+					"-y",
+					"slack-mcp-server@latest",
+					"--transport",
+					"stdio"
+				],
+				env: {
+					...getDefaultEnvironment(),
+					SLACK_MCP_XOXP_TOKEN: process.env.SLACK_MCP_XOXP_TOKEN!
+				},
+			}
+		},
+		notionApi: {
+			type: "stdio",
+			params: {
+				command: "npx",
+				args: ["-y", "@notionhq/notion-mcp-server"],
+				env: {
+					...getDefaultEnvironment(),
+					OPENAPI_MCP_HEADERS: `{\"Authorization\": \"Bearer ${process.env.NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\" }`,
+				},
+			}
 		},
 	});
 

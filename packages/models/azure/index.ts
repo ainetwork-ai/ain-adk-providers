@@ -101,7 +101,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 				model: this.modelName,
 				messages,
 				tools: functions,
-				tool_choice: "auto",
+				tool_choice: functions.length > 0 ? "auto" : "none",
 			});
 
 			const { content, tool_calls } = response.choices[0].message;
@@ -132,7 +132,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			model: this.modelName,
 			messages,
 			tools: functions,
-			tool_choice: "auto",
+			tool_choice: functions.length > 0 ? "auto" : "none",
 			stream: true,
 		});
 		return this.createOpenAIStreamAdapter(stream);

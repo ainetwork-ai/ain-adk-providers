@@ -1,7 +1,7 @@
 import "dotenv/config";
 
-import { AzureOpenAI } from "@ainetwork/adk-provider-model-azure";
-import { GeminiModel } from "@ainetwork/adk-provider-model-gemini";
+import { AzureOpenAI } from "../../packages/models/azure";
+import { GeminiModel } from "../../packages/models/gemini";
 import { BaseAuth, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
 import { InMemoryThread, InMemoryIntent } from "../../packages/memory/inmemory";
 import { AINAgent } from "@ainetwork/adk";

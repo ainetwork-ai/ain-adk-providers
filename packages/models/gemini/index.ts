@@ -1,5 +1,5 @@
 import { BaseModel } from "@ainetwork/adk/modules";
-import { MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
+import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
@@ -53,12 +53,11 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 			: [{ role: "model", parts: [{ text: systemPrompt.trim() }] }];
 		const sessionContent: Content[] = !thread
 			? []
-			: Object.keys(thread.messages).map((chatId: string) => {
-					const chat = thread.messages[chatId];
+			: thread.messages.map((message: MessageObject) => {
 					// TODO: check message.content.type
 					return {
-						role: this.getMessageRole(chat.role),
-						parts: [{ text: chat.content.parts[0] }],
+						role: this.getMessageRole(message.role),
+						parts: [{ text: message.content.parts[0] }],
 					};
 				});
 		const userContent: Content = { role: "user", parts: [{ text: query }] };

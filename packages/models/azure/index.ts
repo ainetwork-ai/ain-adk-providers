@@ -1,5 +1,5 @@
 import { BaseModel } from "@ainetwork/adk/modules";
-import { MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
+import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
@@ -63,11 +63,10 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			: [{ role: "system", content: systemPrompt.trim() }];
 		const sessionContent: CCMessageParam[] = !thread
 			? []
-			: Object.keys(thread.messages).map((chatId: string) => {
-					const chat = thread.messages[chatId];
+			: thread.messages.map((message: MessageObject) => {
 					return {
-						role: this.getMessageRole(chat.role),
-						content: chat.content.parts[0],
+						role: this.getMessageRole(message.role),
+						content: message.content.parts[0],
 					};
 				});
 		const userContent: CCMessageParam = { role: "user", content: query };

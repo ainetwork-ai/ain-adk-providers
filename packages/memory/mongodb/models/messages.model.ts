@@ -14,6 +14,11 @@ export const MessageContentObjectSchema = new Schema(
 // MessageObject schema - 개별 문서로 저장
 export const MessageObjectSchema = new Schema(
 	{
+		messageId: {
+			type: String,
+			required: true,
+			index: true,
+		},
 		threadId: {
 			type: String,
 			required: true,
@@ -46,7 +51,9 @@ export const MessageObjectSchema = new Schema(
 
 // Message Document interface
 export interface MessageDocument extends Document {
+	messageId: string;
 	threadId: string;
+	userId: string;
 	role: MessageRole;
 	content: {
 		type: string;
@@ -54,8 +61,6 @@ export interface MessageDocument extends Document {
 	};
 	timestamp: number;
 	metadata?: { [key: string]: unknown };
-	createdAt: Date;
-	updatedAt: Date;
 }
 
 export const MessageModel = mongoose.model<MessageDocument>("Message", MessageObjectSchema);

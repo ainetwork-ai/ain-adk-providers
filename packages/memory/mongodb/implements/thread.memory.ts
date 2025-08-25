@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { MessageObject, ThreadMetadata, ThreadObject, ThreadType } from "@ainetwork/adk/types/memory";
 import { MessageRole } from "@ainetwork/adk/types/memory";
 import { IThreadMemory } from "@ainetwork/adk/modules";
@@ -28,16 +27,16 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
 		const threadObject: ThreadObject = { 
       type: thread.type as ThreadType,
       title: thread.title || "New thread",
-      messages: {}
+      messages: []
     };
 		messages.forEach((message: MessageDocument) => {
-			const messageId = message._id?.toString() || message.id;
-			threadObject.messages[messageId] = {
+			threadObject.messages.push({
+        messageId: message.messageId,
 				role: message.role as MessageRole,
 				content: message.content,
 				timestamp: message.timestamp,
 				metadata: message.metadata,
-			};
+			});
 		});
 
 		return threadObject;
@@ -66,25 +65,21 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     userId: string,
     threadId: string,
     messages: MessageObject[]
-  ): Promise<string[]> {
+  ): Promise<void> {
     await ThreadModel.updateOne({ threadId, userId }, {
       updated_at: Date.now(),
     });
-    const messageIds: string[] = [];
     for (const message of messages) {
-      const newId = randomUUID();
       await MessageModel.create({
         threadId,
-        messageId: newId,
+        messageId: message.messageId,
         userId,
         role: message.role,
         content: message.content,
         timestamp: message.timestamp,
         metadata: message.metadata,
       });
-      messageIds.push(newId);
     }
-    return messageIds;
   };
 
 	public async deleteThread(userId: string, threadId: string): Promise<void> {

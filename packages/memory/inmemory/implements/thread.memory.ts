@@ -1,11 +1,10 @@
-import { randomUUID } from "node:crypto";
 import type { MessageObject, ThreadObject, ThreadMetadata, ThreadType } from "@ainetwork/adk/types/memory";
 import { IThreadMemory } from "@ainetwork/adk/modules";
 
 type InMemoryThreadObject = {
   type: ThreadType;
   title: string;
-  messages: Map<string, MessageObject>
+  messages: Array<MessageObject>;
 }
 
 type InMemoryThreadMetadata = {
@@ -40,7 +39,7 @@ export class InMemoryThread implements IThreadMemory {
       const threadObject: ThreadObject = {
         type: res.type,
         title: res.title,
-        messages: Object.fromEntries(res.messages)
+        messages: res.messages,
       };
       return threadObject;
     }
@@ -59,7 +58,7 @@ export class InMemoryThread implements IThreadMemory {
       this.userThreadIndex.set(userId, new Set());
     }
     if (!this.threads.has(key)) {
-      this.threads.set(key, { type, title, messages: new Map() });
+      this.threads.set(key, { type, title, messages: [] });
       const metadata: InMemoryThreadMetadata = {
         type, threadId, title, createdAt: now, updatedAt: now,
       }
@@ -73,16 +72,12 @@ export class InMemoryThread implements IThreadMemory {
     userId: string,
     threadId: string,
     messages: MessageObject[]
-  ): Promise<string[]> {
+  ): Promise<void> {
     const key = this.generateKey(userId, threadId);
     const thread = this.threads.get(key);
-    const messageIds: string[] = [];
     for (const message of messages) {
-      const newMessageId = randomUUID();
-      thread?.messages.set(newMessageId, message);
-      messageIds.push(newMessageId);
+      thread?.messages.push(message);
     }
-    return messageIds;
   };
 
 	public async deleteThread(userId: string, threadId: string): Promise<void> {

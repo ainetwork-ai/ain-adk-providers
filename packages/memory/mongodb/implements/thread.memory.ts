@@ -30,7 +30,6 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
       messages: []
     };
 		messages.forEach((message: MessageDocument) => {
-			const messageId = message._id?.toString() || message.id;
 			threadObject.messages.push({
         messageId: message.messageId,
 				role: message.role as MessageRole,

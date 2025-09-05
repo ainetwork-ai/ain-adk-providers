@@ -37,6 +37,8 @@ export class InMemoryThread implements IThreadMemory {
     const res = this.threads.get(key);
     if (res) {
       const threadObject: ThreadObject = {
+        threadId,
+        userId,
         type: res.type,
         title: res.title,
         messages: res.messages,
@@ -51,7 +53,7 @@ export class InMemoryThread implements IThreadMemory {
     userId: string,
     threadId: string,
     title: string
-  ): Promise<ThreadMetadata> {
+  ): Promise<ThreadObject> {
     const now = Date.now();
     const key = this.generateKey(userId, threadId);
     if (!this.userThreadIndex.has(userId)) {
@@ -65,7 +67,7 @@ export class InMemoryThread implements IThreadMemory {
       this.userThreadIndex.get(userId)?.add(metadata);
     }
 
-    return { type, title, threadId, updatedAt: now };
+    return { type, title, threadId, userId, messages: [] };
   };
 
 	public async addMessagesToThread(

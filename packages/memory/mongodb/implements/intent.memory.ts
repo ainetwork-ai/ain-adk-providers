@@ -12,7 +12,6 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
         name: intent.name,
         description: intent.description,
         prompt: intent.prompt,
-        llm: intent.llm,
       } as Intent;
     }
     return undefined;
@@ -25,7 +24,6 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
 				name: intent.name,
 				description: intent.description,
 				prompt: intent.prompt,
-				llm: intent.llm,
 			} as Intent;
 		}
 		return undefined;
@@ -37,7 +35,6 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
       name: intent.name,
       description: intent.description,
       prompt: intent.prompt,
-      llm: intent.llm,
     });
   };
 
@@ -48,7 +45,6 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
       name: intent.name,
       description: intent.description,
       prompt: intent.prompt,
-      llm: intent.llm,
     });
   };
 
@@ -62,7 +58,6 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
       name: intent.name,
       description: intent.description,
       prompt: intent.prompt,
-      llm: intent.llm,
     } as Intent));
   };
 }

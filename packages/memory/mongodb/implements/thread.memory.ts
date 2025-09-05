@@ -25,6 +25,8 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
 		loggers.agent.debug(`Found ${messages.length} messages for thread ${threadId}`);
 
 		const threadObject: ThreadObject = { 
+      threadId: thread.threadId, 
+      userId: thread.userId,
       type: thread.type as ThreadType,
       title: thread.title || "New thread",
       messages: []
@@ -47,7 +49,7 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
 		userId: string,
 		threadId: string,
 		title: string,
-  ): Promise<ThreadMetadata> {
+  ): Promise<ThreadObject> {
     const now = Date.now();
     await ThreadModel.create({
       type,
@@ -58,7 +60,7 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
       created_at: now,
     });
 
-    return { type, threadId, title, updatedAt: now };
+    return { type, userId, threadId, title, messages: []};
   };
 
 	public async addMessagesToThread(

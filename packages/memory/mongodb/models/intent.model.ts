@@ -15,10 +15,6 @@ const IntentObjectSchema = new Schema(
 			type: String,
 			required: false,
 		},
-		llm: {
-			type: String,
-			required: false,
-		},
 	}
 );
 
@@ -26,7 +22,6 @@ export interface IntentDocument extends Document {
 	name: string;
 	description: string;
 	prompt?: string;
-	llm?: string;
 }
 
 export const IntentModel = mongoose.model<IntentDocument>("Intent", IntentObjectSchema);

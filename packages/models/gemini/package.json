@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.2.5",
+    "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk",
     "@google/genai": "^1.11.0"
   },
   "devDependencies": {

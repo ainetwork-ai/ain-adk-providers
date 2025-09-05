@@ -6,12 +6,9 @@ import type {
 } from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
-	IA2ATool,
-	IAgentTool,
-	IMCPTool,
 	ToolCall,
-} from "@ainetwork/adk/types/tool";
-import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool";
+	ConnectorTool,
+} from "@ainetwork/adk/types/connector";
 import {
 	type Content,
 	type FunctionCall,
@@ -179,27 +176,14 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		};
 	}
 
-	convertToolsToFunctions(tools: IAgentTool[]): FunctionDeclaration[] {
+	convertToolsToFunctions(tools: ConnectorTool[]): FunctionDeclaration[] {
 		const functions: FunctionDeclaration[] = [];
 		for (const tool of tools) {
-			if (!tool.enabled) {
-				continue;
-			}
-			if (tool.protocol === TOOL_PROTOCOL_TYPE.MCP) {
-				const { mcpTool, id } = tool as IMCPTool;
-				functions.push({
-					name: id,
-					description: mcpTool.description,
-					parametersJsonSchema: mcpTool.inputSchema,
-				});
-			} else {
-				// PROTOCOL_TYPE.A2A
-				const { id, card } = tool as IA2ATool;
-				functions.push({
-					name: id,
-					description: card.description,
-				});
-			}
+			functions.push({
+				name: tool.toolName,
+				description: tool.description,
+				parametersJsonSchema: tool.inputSchema,
+			});
 		}
 		return functions;
 	}

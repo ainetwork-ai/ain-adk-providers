@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk",
+    "@ainetwork/adk": "^0.2.7",
     "mongoose": "^8.16.5"
   },
   "devDependencies": {

@@ -104,6 +104,7 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     const data: ThreadMetadata[] = threads.map((thread: ThreadDocument) => {
       return {
         type: thread.type,
+        userId,
         threadId: thread.threadId,
         title: thread.title,
         updatedAt: thread.updated_at

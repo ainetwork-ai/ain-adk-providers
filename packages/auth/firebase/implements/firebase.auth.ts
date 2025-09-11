@@ -24,7 +24,7 @@ export class FirebaseAuth extends BaseAuth {
     });
   }
 
-  public async authenticate(req: Request, res: Response): Promise<AuthResponse> {
+  public async authenticate(req: any, res: any): Promise<AuthResponse> {
     const token = this.extractBearerToken(req);
     if (!token) {
       return { isAuthenticated: false };

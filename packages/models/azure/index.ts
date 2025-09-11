@@ -7,12 +7,9 @@ import type {
 } from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
-	IA2ATool,
-	IAgentTool,
-	IMCPTool,
 	ToolCall,
-} from "@ainetwork/adk/types/tool";
-import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool";
+	ConnectorTool,
+} from "@ainetwork/adk/types/connector";
 import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,
@@ -175,33 +172,17 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		};
 	}
 
-	convertToolsToFunctions(tools: IAgentTool[]): ChatCompletionTool[] {
+	convertToolsToFunctions(tools: ConnectorTool[]): ChatCompletionTool[] {
 		const functions: ChatCompletionTool[] = [];
 		for (const tool of tools) {
-			if (!tool.enabled) {
-				continue;
-			}
-			if (tool.protocol === TOOL_PROTOCOL_TYPE.MCP) {
-				const { mcpTool, id } = tool as IMCPTool;
-				functions.push({
-					type: "function",
-					function: {
-						name: id,
-						description: mcpTool.description,
-						parameters: mcpTool.inputSchema,
-					},
-				});
-			} else {
-				// PROTOCOL_TYPE.A2A
-				const { id, card } = tool as IA2ATool;
-				functions.push({
-					type: "function",
-					function: {
-						name: id,
-						description: card.description,
-					},
-				});
-			}
+			functions.push({
+				type: "function",
+				function: {
+					name: tool.toolName,
+					description: tool.description,
+					parameters: tool.inputSchema,
+				},
+			});
 		}
 		return functions;
 	}

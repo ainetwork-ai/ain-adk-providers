@@ -6,7 +6,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@ainetwork/adk": "^0.2.7",
+    "@ainetwork/adk": "0.2.8",
     "@ainetwork/adk-provider-memory-inmemory": "^0.1.6",
     "@ainetwork/adk-provider-model-azure": "^0.1.7",
     "@ainetwork/adk-provider-model-gemini": "^0.1.6",

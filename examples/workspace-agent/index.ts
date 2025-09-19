@@ -26,7 +26,7 @@ async function main() {
 	modelModule.addModel('azure-gpt-4o', azureModel);
 
 	const mcpModule = new MCPModule();
-	mcpModule.addMCPServerConfig({
+	mcpModule.addMCPConnector({
 		slack: {
 			type: "stdio",
 			params: {

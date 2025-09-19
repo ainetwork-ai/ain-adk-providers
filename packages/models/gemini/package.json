@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "0.2.8",
+    "@ainetwork/adk": "0.2.9",
     "@google/genai": "^1.11.0"
   },
   "devDependencies": {

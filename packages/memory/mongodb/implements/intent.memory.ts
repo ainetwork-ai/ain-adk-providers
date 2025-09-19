@@ -29,7 +29,7 @@ export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
   };
 
 	public async listIntents(): Promise<Intent[]> {
-    const intents = await IntentModel.find();
+    const intents = await IntentModel.find().lean<Intent[]>();
     return intents;
   };
 }

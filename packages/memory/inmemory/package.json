@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-memory-inmemory",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.2.7"
+    "@ainetwork/adk": "0.2.9"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

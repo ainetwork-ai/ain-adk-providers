@@ -1,3 +1,4 @@
+import { Intent } from "@ainetwork/adk/types/memory";
 import mongoose, { type Document, Schema } from "mongoose";
 
 const IntentObjectSchema = new Schema(
@@ -6,6 +7,7 @@ const IntentObjectSchema = new Schema(
 			type: String,
 			required: true,
 			index: true,
+			unique: true,
 		},
 		name: {
 			type: String,
@@ -35,14 +37,8 @@ const IntentObjectSchema = new Schema(
 	},
 );
 
-export interface IntentDocument extends Document {
+export interface IntentDocument extends Omit<Document, 'id'>, Omit<Intent, 'id'> {
 	id: string;
-	name: string;
-	description: string;
-	prompt?: string;
-	status: string;
-	triggeringSentences?: Array<string>;
-	tags?: Array<string>;
 }
 
 export const IntentModel = mongoose.model<IntentDocument>("Intent", IntentObjectSchema);

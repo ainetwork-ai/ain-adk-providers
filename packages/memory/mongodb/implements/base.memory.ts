@@ -1,52 +1,32 @@
 import { IMemory } from "node_modules/@ainetwork/adk/dist/esm/modules/memory/base.memory";
-import mongoose from "mongoose";
-import { loggers } from "@ainetwork/adk/utils/logger";
+import { MongoDBConnectionManager } from "../connection.manager";
 
 export class MongoDBMemory implements IMemory {
-  private _isConnected: boolean = false;
-  private _uri: string;
+  protected connectionManager: MongoDBConnectionManager;
 
   constructor(uri: string) {
-    this._uri = uri;
+    this.connectionManager = MongoDBConnectionManager.getInstance({ uri });
   }
 
   public async connect(): Promise<void> {
-		if (this._isConnected) {
-			return;
-		}
-
-		try {
-      await mongoose.connect(this._uri, {
-        maxPoolSize: 1,
-        serverSelectionTimeoutMS: 30000,
-        socketTimeoutMS: 45000,
-        connectTimeoutMS: 30000,
-        bufferCommands: false,
-      });
-			this._isConnected = true;
-			loggers.agent.info("MongoDB connected successfully");
-		} catch (error) {
-			loggers.agent.error("Failed to connect to MongoDB:", error);
-			throw error;
-		}
+    await this.connectionManager.connect();
   }
 
   public async disconnect(): Promise<void> {
-		if (!this.isConnected) {
-			return;
-		}
-
-		try {
-			await mongoose.disconnect();
-			this._isConnected = false;
-			loggers.agent.info("MongoDB disconnected successfully");
-		} catch (error) {
-			loggers.agent.error("Failed to disconnect from MongoDB:", error);
-			throw error;
-		}
+    await this.connectionManager.disconnect();
   }
 
   public isConnected(): boolean {
-    return this._isConnected;
+    return this.connectionManager.getIsConnected();
+  }
+
+  /**
+   * Execute a database operation with automatic retry on connection errors
+   */
+  protected async executeWithRetry<T>(
+    operation: () => Promise<T>,
+    operationName?: string
+  ): Promise<T> {
+    return this.connectionManager.executeWithRetry(operation, operationName);
   }
 }

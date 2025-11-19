@@ -15,101 +15,111 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     userId: string,
     threadId: string
   ): Promise<ThreadObject | undefined> {
-    const thread = await ThreadModel.findOne({ threadId, userId });
-		const messages = await MessageModel.find({ threadId, userId }).sort({
-			timestamp: 1,
-		});
+    return this.executeWithRetry(async () => {
+      const thread = await ThreadModel.findOne({ threadId, userId });
+      const messages = await MessageModel.find({ threadId, userId }).sort({
+        timestamp: 1,
+      });
 
-    if (!thread) return undefined;
+      if (!thread) return undefined;
 
-		loggers.agent.debug(`Found ${messages.length} messages for thread ${threadId}`);
+      loggers.agent.debug(`Found ${messages.length} messages for thread ${threadId}`);
 
-		const threadObject: ThreadObject = { 
-      threadId: thread.threadId, 
-      userId: thread.userId,
-      type: thread.type as ThreadType,
-      title: thread.title || "New thread",
-      messages: []
-    };
-		messages.forEach((message: MessageDocument) => {
-			threadObject.messages.push({
-        messageId: message.messageId,
-				role: message.role as MessageRole,
-				content: message.content,
-				timestamp: message.timestamp,
-				metadata: message.metadata,
-			});
-		});
+      const threadObject: ThreadObject = {
+        threadId: thread.threadId,
+        userId: thread.userId,
+        type: thread.type as ThreadType,
+        title: thread.title || "New thread",
+        messages: []
+      };
+      messages.forEach((message: MessageDocument) => {
+        threadObject.messages.push({
+          messageId: message.messageId,
+          role: message.role as MessageRole,
+          content: message.content,
+          timestamp: message.timestamp,
+          metadata: message.metadata,
+        });
+      });
 
-		return threadObject;
+      return threadObject;
+    }, `getThread(${userId}, ${threadId})`);
   };
 
-	public async createThread(
-		type: ThreadType,
-		userId: string,
-		threadId: string,
-		title: string,
+  public async createThread(
+    type: ThreadType,
+    userId: string,
+    threadId: string,
+    title: string,
   ): Promise<ThreadObject> {
-    const now = Date.now();
-    await ThreadModel.create({
-      type,
-      userId,
-      threadId,
-      title,
-      updated_at: now,
-      created_at: now,
-    });
+    return this.executeWithRetry(async () => {
+      const now = Date.now();
+      await ThreadModel.create({
+        type,
+        userId,
+        threadId,
+        title,
+        updated_at: now,
+        created_at: now,
+      });
 
-    return { type, userId, threadId, title, messages: []};
+      return { type, userId, threadId, title, messages: []};
+    }, `createThread(${userId}, ${threadId})`);
   };
 
-	public async addMessagesToThread(
+  public async addMessagesToThread(
     userId: string,
     threadId: string,
     messages: MessageObject[]
   ): Promise<void> {
-    await ThreadModel.updateOne({ threadId, userId }, {
-      updated_at: Date.now(),
-    });
-    for (const message of messages) {
-      await MessageModel.create({
-        threadId,
-        messageId: message.messageId,
-        userId,
-        role: message.role,
-        content: message.content,
-        timestamp: message.timestamp,
-        metadata: message.metadata,
+    return this.executeWithRetry(async () => {
+      await ThreadModel.updateOne({ threadId, userId }, {
+        updated_at: Date.now(),
       });
-    }
+      for (const message of messages) {
+        await MessageModel.create({
+          threadId,
+          messageId: message.messageId,
+          userId,
+          role: message.role,
+          content: message.content,
+          timestamp: message.timestamp,
+          metadata: message.metadata,
+        });
+      }
+    }, `addMessagesToThread(${userId}, ${threadId})`);
   };
 
-	public async deleteThread(userId: string, threadId: string): Promise<void> {
-		const messages = await MessageModel.find({ userId, threadId }).sort({
-			timestamp: 1,
-		});
+  public async deleteThread(userId: string, threadId: string): Promise<void> {
+    return this.executeWithRetry(async () => {
+      const messages = await MessageModel.find({ userId, threadId }).sort({
+        timestamp: 1,
+      });
 
-		messages?.forEach((message: MessageDocument) => {
-      message.deleteOne();
-		});
-    
-    const thread = await ThreadModel.findOne({ userId, threadId });
-    thread?.deleteOne();
+      messages?.forEach((message: MessageDocument) => {
+        message.deleteOne();
+      });
+
+      const thread = await ThreadModel.findOne({ userId, threadId });
+      thread?.deleteOne();
+    }, `deleteThread(${userId}, ${threadId})`);
   };
 
-	public async listThreads(userId: string): Promise<ThreadMetadata[]> {
-    const threads = await ThreadModel.find({ userId }).sort({
-      updated_at: -1,
-    });
-    const data: ThreadMetadata[] = threads.map((thread: ThreadDocument) => {
-      return {
-        type: thread.type,
-        userId,
-        threadId: thread.threadId,
-        title: thread.title,
-        updatedAt: thread.updated_at
-      } as ThreadMetadata;
-    })
-    return data;
+  public async listThreads(userId: string): Promise<ThreadMetadata[]> {
+    return this.executeWithRetry(async () => {
+      const threads = await ThreadModel.find({ userId }).sort({
+        updated_at: -1,
+      });
+      const data: ThreadMetadata[] = threads.map((thread: ThreadDocument) => {
+        return {
+          type: thread.type,
+          userId,
+          threadId: thread.threadId,
+          title: thread.title,
+          updatedAt: thread.updated_at
+        } as ThreadMetadata;
+      })
+      return data;
+    }, `listThreads(${userId})`);
   };
 }

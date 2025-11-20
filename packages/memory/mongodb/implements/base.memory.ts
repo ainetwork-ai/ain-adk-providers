@@ -1,23 +1,176 @@
 import { IMemory } from "node_modules/@ainetwork/adk/dist/esm/modules/memory/base.memory";
-import { MongoDBConnectionManager } from "../connection.manager";
+import mongoose from "mongoose";
+import { loggers } from "@ainetwork/adk/utils/logger";
+
+export interface MongoDBMemoryConfig {
+  uri: string;
+  maxReconnectAttempts?: number;
+  reconnectInterval?: number;
+  maxPoolSize?: number;
+  serverSelectionTimeoutMS?: number;
+  socketTimeoutMS?: number;
+  connectTimeoutMS?: number;
+}
 
 export class MongoDBMemory implements IMemory {
-  protected connectionManager: MongoDBConnectionManager;
+  private static instance: MongoDBMemory;
+  private uri: string;
+  private connected: boolean = false;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number;
+  private reconnectInterval: number;
+  private reconnecting: boolean = false;
+  private connectionConfig: mongoose.ConnectOptions;
+  private eventListenersSetup: boolean = false;
 
-  constructor(uri: string) {
-    this.connectionManager = MongoDBConnectionManager.getInstance({ uri });
+  constructor(config: string | MongoDBMemoryConfig) {
+    const cfg = typeof config === 'string' ? { uri: config } : config;
+
+    this.uri = cfg.uri;
+    this.maxReconnectAttempts = cfg.maxReconnectAttempts ?? 5;
+    this.reconnectInterval = cfg.reconnectInterval ?? 5000;
+    this.connectionConfig = {
+      maxPoolSize: cfg.maxPoolSize ?? 1,
+      serverSelectionTimeoutMS: cfg.serverSelectionTimeoutMS ?? 30000,
+      socketTimeoutMS: cfg.socketTimeoutMS ?? 45000,
+      connectTimeoutMS: cfg.connectTimeoutMS ?? 30000,
+      bufferCommands: false,
+    };
+
+    if (!MongoDBMemory.instance) {
+      MongoDBMemory.instance = this;
+      this.setupMongooseEventListeners();
+    } else {
+      // Use existing instance's connection state
+      this.connected = MongoDBMemory.instance.connected;
+    }
+  }
+
+  private setupMongooseEventListeners(): void {
+    if (this.eventListenersSetup) return;
+
+    this.eventListenersSetup = true;
+
+    mongoose.connection.on("connected", () => {
+      this.connected = true;
+      this.reconnectAttempts = 0;
+      this.reconnecting = false;
+      loggers.agent.info("MongoDB connected successfully");
+    });
+
+    mongoose.connection.on("disconnected", () => {
+      this.connected = false;
+      loggers.agent.warn("MongoDB disconnected");
+      this.handleDisconnection();
+    });
+
+    mongoose.connection.on("error", (error) => {
+      this.connected = false;
+      loggers.agent.error("MongoDB connection error:", error);
+      this.handleDisconnection();
+    });
+
+    mongoose.connection.on("reconnected", () => {
+      this.connected = true;
+      this.reconnectAttempts = 0;
+      this.reconnecting = false;
+      loggers.agent.info("MongoDB reconnected successfully");
+    });
+  }
+
+  private async handleDisconnection(): Promise<void> {
+    if (this.reconnecting) {
+      return;
+    }
+
+    this.reconnecting = true;
+
+    while (this.reconnectAttempts < this.maxReconnectAttempts && !this.isConnected) {
+      this.reconnectAttempts++;
+      loggers.agent.info(
+        `Attempting to reconnect to MongoDB (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
+      );
+
+      try {
+        await mongoose.connect(this.uri, this.connectionConfig);
+        this.connected = true;
+        this.reconnectAttempts = 0;
+        this.reconnecting = false;
+        loggers.agent.info("MongoDB reconnection successful");
+        return;
+      } catch (error) {
+        loggers.agent.error(
+          `Reconnection attempt ${this.reconnectAttempts} failed:`,
+          error
+        );
+
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.reconnectInterval)
+          );
+        }
+      }
+    }
+
+    this.reconnecting = false;
+
+    if (!this.isConnected) {
+      loggers.agent.error(
+        `Failed to reconnect to MongoDB after ${this.maxReconnectAttempts} attempts`
+      );
+    }
   }
 
   public async connect(): Promise<void> {
-    await this.connectionManager.connect();
+    if (this.connected) {
+      return;
+    }
+
+    try {
+      await mongoose.connect(this.uri, this.connectionConfig);
+      this.connected = true;
+      this.reconnectAttempts = 0;
+      loggers.agent.info("MongoDB connected successfully");
+    } catch (error) {
+      loggers.agent.error("Failed to connect to MongoDB:", error);
+      throw error;
+    }
   }
 
   public async disconnect(): Promise<void> {
-    await this.connectionManager.disconnect();
+    if (!this.isConnected) {
+      return;
+    }
+
+    try {
+      await mongoose.disconnect();
+      this.connected = false;
+      loggers.agent.info("MongoDB disconnected successfully");
+    } catch (error) {
+      loggers.agent.error("Failed to disconnect from MongoDB:", error);
+      throw error;
+    }
   }
 
   public isConnected(): boolean {
-    return this.connectionManager.getIsConnected();
+    return this.connected;
+  }
+
+  private async ensureConnection(): Promise<void> {
+    if (!this.isConnected && !this.reconnecting) {
+      await this.connect();
+    }
+
+    // Wait for reconnection if in progress
+    const maxWaitTime = 30000; // 30 seconds
+    const startTime = Date.now();
+    while (this.reconnecting && Date.now() - startTime < maxWaitTime) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    if (!this.isConnected) {
+      throw new Error("MongoDB is not connected and reconnection failed");
+    }
   }
 
   /**
@@ -25,8 +178,37 @@ export class MongoDBMemory implements IMemory {
    */
   protected async executeWithRetry<T>(
     operation: () => Promise<T>,
-    operationName?: string
+    operationName: string = "Database operation"
   ): Promise<T> {
-    return this.connectionManager.executeWithRetry(operation, operationName);
+    await this.ensureConnection();
+
+    try {
+      return await operation();
+    } catch (error: any) {
+      // Check if it's a connection-related error
+      if (
+        error.name === "MongoNetworkError" ||
+        error.name === "MongoServerError" ||
+        error.message?.includes("connection") ||
+        error.message?.includes("disconnect")
+      ) {
+        loggers.agent.warn(
+          `${operationName} failed due to connection issue, attempting reconnection...`
+        );
+
+        await this.ensureConnection();
+
+        // Retry the operation once after reconnection
+        try {
+          return await operation();
+        } catch (retryError) {
+          loggers.agent.error(`${operationName} failed after retry:`, retryError);
+          throw retryError;
+        }
+      }
+
+      // If it's not a connection error, just throw it
+      throw error;
+    }
   }
 }

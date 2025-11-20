@@ -134,7 +134,6 @@ export class MongoDBMemory implements IMemory {
       await mongoose.connect(this.uri, this.connectionConfig);
       this.connected = true;
       this.reconnectAttempts = 0;
-      loggers.agent.info("MongoDB connected successfully");
     } catch (error) {
       loggers.agent.error("Failed to connect to MongoDB:", error);
       throw error;
@@ -149,7 +148,6 @@ export class MongoDBMemory implements IMemory {
     try {
       await mongoose.disconnect();
       this.connected = false;
-      loggers.agent.info("MongoDB disconnected successfully");
     } catch (error) {
       loggers.agent.error("Failed to disconnect from MongoDB:", error);
       throw error;

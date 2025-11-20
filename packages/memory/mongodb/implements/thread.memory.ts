@@ -16,10 +16,11 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
     threadId: string
   ): Promise<ThreadObject | undefined> {
     return this.executeWithRetry(async () => {
-      const thread = await ThreadModel.findOne({ threadId, userId });
-      const messages = await MessageModel.find({ threadId, userId }).sort({
-        timestamp: 1,
-      });
+      const timeout = this.getOperationTimeout();
+      const thread = await ThreadModel.findOne({ threadId, userId }).maxTimeMS(timeout);
+      const messages = await MessageModel.find({ threadId, userId })
+        .sort({ timestamp: 1 })
+        .maxTimeMS(timeout);
 
       if (!thread) return undefined;
 
@@ -92,24 +93,26 @@ export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
 
   public async deleteThread(userId: string, threadId: string): Promise<void> {
     return this.executeWithRetry(async () => {
-      const messages = await MessageModel.find({ userId, threadId }).sort({
-        timestamp: 1,
-      });
+      const timeout = this.getOperationTimeout();
+      const messages = await MessageModel.find({ userId, threadId })
+        .sort({ timestamp: 1 })
+        .maxTimeMS(timeout);
 
       messages?.forEach((message: MessageDocument) => {
         message.deleteOne();
       });
 
-      const thread = await ThreadModel.findOne({ userId, threadId });
+      const thread = await ThreadModel.findOne({ userId, threadId }).maxTimeMS(timeout);
       thread?.deleteOne();
     }, `deleteThread(${userId}, ${threadId})`);
   };
 
   public async listThreads(userId: string): Promise<ThreadMetadata[]> {
     return this.executeWithRetry(async () => {
-      const threads = await ThreadModel.find({ userId }).sort({
-        updated_at: -1,
-      });
+      const timeout = this.getOperationTimeout();
+      const threads = await ThreadModel.find({ userId })
+        .sort({ updated_at: -1 })
+        .maxTimeMS(timeout);
       const data: ThreadMetadata[] = threads.map((thread: ThreadDocument) => {
         return {
           type: thread.type,

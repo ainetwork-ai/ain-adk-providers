@@ -10,6 +10,7 @@ export interface MongoDBMemoryConfig {
   serverSelectionTimeoutMS?: number;
   socketTimeoutMS?: number;
   connectTimeoutMS?: number;
+  operationTimeoutMS?: number; // Timeout for database operations
 }
 
 export class MongoDBMemory implements IMemory {
@@ -22,6 +23,7 @@ export class MongoDBMemory implements IMemory {
   private reconnecting: boolean = false;
   private connectionConfig: mongoose.ConnectOptions;
   private eventListenersSetup: boolean = false;
+  private operationTimeoutMS: number;
 
   constructor(config: string | MongoDBMemoryConfig) {
     const cfg = typeof config === 'string' ? { uri: config } : config;
@@ -29,6 +31,7 @@ export class MongoDBMemory implements IMemory {
     this.uri = cfg.uri;
     this.maxReconnectAttempts = cfg.maxReconnectAttempts ?? 5;
     this.reconnectInterval = cfg.reconnectInterval ?? 5000;
+    this.operationTimeoutMS = cfg.operationTimeoutMS ?? 10000; // Default 10 seconds
     this.connectionConfig = {
       maxPoolSize: cfg.maxPoolSize ?? 1,
       serverSelectionTimeoutMS: cfg.serverSelectionTimeoutMS ?? 30000,
@@ -43,6 +46,7 @@ export class MongoDBMemory implements IMemory {
     } else {
       // Use existing instance's connection state
       this.connected = MongoDBMemory.instance.connected;
+      this.operationTimeoutMS = MongoDBMemory.instance.operationTimeoutMS;
     }
   }
 
@@ -174,7 +178,15 @@ export class MongoDBMemory implements IMemory {
   }
 
   /**
+   * Get the operation timeout in milliseconds
+   */
+  protected getOperationTimeout(): number {
+    return this.operationTimeoutMS;
+  }
+
+  /**
    * Execute a database operation with automatic retry on connection errors
+   * Note: Use mongoose's maxTimeMS option in queries for timeout control
    */
   protected async executeWithRetry<T>(
     operation: () => Promise<T>,
@@ -185,6 +197,12 @@ export class MongoDBMemory implements IMemory {
     try {
       return await operation();
     } catch (error: any) {
+      // Check if it's a timeout error from MongoDB
+      if (error.code === 50 || error.message?.includes("operation exceeded time limit")) {
+        loggers.agent.error(`${operationName} exceeded time limit`);
+        throw error;
+      }
+
       // Check if it's a connection-related error
       if (
         error.name === "MongoNetworkError" ||
@@ -201,7 +219,7 @@ export class MongoDBMemory implements IMemory {
         // Retry the operation once after reconnection
         try {
           return await operation();
-        } catch (retryError) {
+        } catch (retryError: any) {
           loggers.agent.error(`${operationName} failed after retry:`, retryError);
           throw retryError;
         }

@@ -6,7 +6,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@ainetwork/adk": "0.2.9",
+    "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk",
     "@ainetwork/adk-provider-auth-firebase": "^0.1.6",
     "@ainetwork/adk-provider-memory-inmemory": "^0.1.6",
     "@ainetwork/adk-provider-model-azure": "^0.1.7",

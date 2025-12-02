@@ -17,14 +17,8 @@ type InMemoryThreadMetadata = {
 }
 
 export class InMemoryThread implements IThreadMemory {
-	public threads: Map<string, InMemoryThreadObject> = new Map();
+  public threads: Map<string, InMemoryThreadObject> = new Map();
   public userThreadIndex: Map<string, Set<InMemoryThreadMetadata>> = new Map();
-
-  public async connect(): Promise<void> {}
-  public async disconnect(): Promise<void> {}
-  public isConnected(): boolean {
-    return true;
-  }
 
   private generateKey(userId: string, threadId: string) {
     return `${userId}:${threadId}`;
@@ -47,9 +41,9 @@ export class InMemoryThread implements IThreadMemory {
       return threadObject;
     }
     return undefined;
-  };
+  }
 
-	public async createThread(
+  public async createThread(
     type: ThreadType,
     userId: string,
     threadId: string,
@@ -69,9 +63,9 @@ export class InMemoryThread implements IThreadMemory {
     }
 
     return { type, title, threadId, userId, messages: [] };
-  };
+  }
 
-	public async addMessagesToThread(
+  public async addMessagesToThread(
     userId: string,
     threadId: string,
     messages: MessageObject[]
@@ -81,19 +75,19 @@ export class InMemoryThread implements IThreadMemory {
     for (const message of messages) {
       thread?.messages.push(message);
     }
-  };
+  }
 
-	public async deleteThread(userId: string, threadId: string): Promise<void> {
+  public async deleteThread(userId: string, threadId: string): Promise<void> {
     const key = this.generateKey(userId, threadId);
     this.threads.delete(key);
     this.userThreadIndex.delete(threadId);
-  };
+  }
 
-	public async listThreads(userId: string): Promise<ThreadMetadata[]> {
+  public async listThreads(userId: string): Promise<ThreadMetadata[]> {
     const threads = this.userThreadIndex.get(userId);
     if (threads) {
       return Array.from(threads);
     }
     return [];
-  };
+  }
 }

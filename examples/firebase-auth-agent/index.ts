@@ -3,7 +3,7 @@ import "dotenv/config";
 import { AzureOpenAI } from "../../packages/models/azure";
 import { GeminiModel } from "../../packages/models/gemini";
 import { MemoryModule, ModelModule } from "@ainetwork/adk/modules";
-import { InMemoryThread, InMemoryIntent } from "../../packages/memory/inmemory";
+import { InMemoryMemory } from "../../packages/memory/inmemory";
 import { AINAgent } from "@ainetwork/adk";
 import { FirebaseAuth } from "@ainetwork/adk-provider-auth-firebase";
 
@@ -22,50 +22,9 @@ async function main() {
   const geminiModel = new GeminiModel(process.env.GEMINI_API_KEY!, process.env.GEMINI_MODEL_NAME!);
   modelModule.addModel("gemini-2.5", geminiModel);
 
-  const memoryModule = new MemoryModule({
-    thread: new InMemoryThread(),
-    intent: new InMemoryIntent(),
-  });
-
-  const systemPrompt = `
-You are a highly sophisticated automated agent that can answer user queries by utilizing various tools and resources.
-
-There is a selection of tools that let you perform actions or retrieve helpful context to answer the user's question.
-You can call tools repeatedly to take actions or gather as much context as needed until you have completed the task fully.
-
-Don't give up unless you are sure the request cannot be fulfilled with the tools you have.
-It's YOUR RESPONSIBILITY to make sure that you have done all you can to collect necessary context.
-
-If you are not sure about content or context pertaining to the user's request, use your tools to read data and gather the relevant information: do NOT guess or make up an answer.
-Be THOROUGH when gathering information. Make sure you have the FULL picture before replying. Use additional tool calls or clarifying questions as needed.
-
-Don't try to answer the user's question directly.
-First break down the user's request into smaller concepts and think about the kinds of tools and queries you need to grasp each concept.
-
-There are two <tool_type> for tools: MCP_Tool and A2A_Tool.
-The tool type can be identified by the presence of "[Bot Called <tool_type> with args <tool_args>]" at the beginning of the tool result message.
-After executing a tool, a final response message must be written.
-
-Refer to the usage instructions below for each <tool_type>.
-
-<MCP_Tool>
-   Use MCP tools through tools.
-   MCP tool names are structured as follows:
-     {MCP_NAME}_{TOOL_NAME}
-     For example, tool names for the "notionApi" mcp would be:
-       notionApi_API-post-search
-
-   Separate rules can be specified under <{MCP_NAME}> for each MCP_NAME.
-</MCP_Tool>
-
-<A2A_Tool>
-   A2A_Tool is a tool that sends queries to Agents with different information than mine and receives answers. The Agent that provided the answer must be clearly indicated.
-   Results from A2A_Tool are text generated after thorough consideration by the requested Agent, and are complete outputs that cannot be further developed.
-   There is no need to supplement the content with the same question or use new tools.
-
-   When text starting with "[A2A Call by <AGENT_NAME>]" comes as a request, it is a query requested by another Agent using A2A_Tool.
-   In this case, the answer should be generated using only MCP_Tool without using other A2A_Tools.
-</A2A_Tool>`;
+  const memoryModule = new MemoryModule(
+    new InMemoryMemory()
+  );
 
   const authScheme = new FirebaseAuth({
     projectId: process.env.FIREBASE_PROJECT_ID!,
@@ -73,17 +32,26 @@ Refer to the usage instructions below for each <tool_type>.
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
   });
 
+  // Adapter to bridge differing @types/express versions between this package and @ainetwork/adk
+  // We use any for the request/response types to avoid the incompatible Request type error.
+  const authAdapter = {
+    authenticate: (req: any, res: any, next?: any) => {
+      // Delegate to the FirebaseAuth instance while using 'any' to bypass type mismatch
+      return (authScheme as any).authenticate(req, res, next);
+    },
+    // If the provider exposes additional methods like authorize, delegate them too
+    authorize: (req: any) => {
+      return (authScheme as any).authorize ? (authScheme as any).authorize(req) : Promise.resolve(false);
+    },
+  } as any;
+
   const manifest = {
     name: "Firebase Auth Agent",
     description: "An agent with Firebase authentication",
     version: "0.0.2", // Incremented version
     url: `http://localhost:${PORT}`,
-    prompts: {
-      agent: "",
-      system: systemPrompt,
-    },
   };
-  const agent = new AINAgent(manifest, { modelModule, memoryModule }, authScheme, true);
+  const agent = new AINAgent(manifest, { modelModule, memoryModule }, authAdapter, true);
 
   agent.start(PORT);
 }

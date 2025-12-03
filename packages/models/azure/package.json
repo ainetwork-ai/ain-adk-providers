@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk",
-    "openai": "^5.10.2"
+    "openai": "^6.9.1"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

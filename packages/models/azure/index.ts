@@ -1,4 +1,4 @@
-import { BaseModel } from "@ainetwork/adk/modules";
+import { BaseModel, ModelFetchOptions } from "@ainetwork/adk/modules";
 import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
@@ -14,6 +14,7 @@ import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,
 	ChatCompletionChunk,
+	ChatCompletionMessageFunctionToolCall,
 	ChatCompletionMessageToolCall,
 	ChatCompletionTool,
 } from "openai/resources";
@@ -77,10 +78,15 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		});
 	}
 
-	async fetch(messages: CCMessageParam[]): Promise<FetchResponse> {
+	async fetch(
+		messages: CCMessageParam[],
+		options?: ModelFetchOptions,
+	): Promise<FetchResponse> {
 		const response = await this.client.chat.completions.create({
 			model: this.modelName,
 			messages,
+			reasoning_effort: options?.reasoning || "none",
+			verbosity: options?.verbosity || "low",
 		});
 
 		return {
@@ -91,6 +97,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 	async fetchWithContextMessage(
 		messages: CCMessageParam[],
 		functions: ChatCompletionTool[],
+		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
 		if (functions.length > 0) {
 			const response = await this.client.chat.completions.create({
@@ -98,16 +105,19 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 				messages,
 				tools: functions,
 				tool_choice: functions.length > 0 ? "auto" : "none",
+				reasoning_effort: options?.reasoning,
+				verbosity: options?.verbosity,
 			});
 
 			const { content, tool_calls } = response.choices[0].message;
 
 			const toolCalls: ToolCall[] | undefined = tool_calls?.map(
 				(value: ChatCompletionMessageToolCall) => {
+					const v = value as ChatCompletionMessageFunctionToolCall;
 					return {
-						name: value.function.name,
+						name: v.function.name,
 						// FIXME: value.function.arguments could not be a valid JSON
-						arguments: JSON.parse(value.function.arguments),
+						arguments: JSON.parse(v.function.arguments),
 					};
 				},
 			);
@@ -123,6 +133,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 	async fetchStreamWithContextMessage(
 		messages: CCMessageParam[],
 		functions: ChatCompletionTool[],
+		options?: ModelFetchOptions,
 	): Promise<LLMStream> {
 		const stream = await this.client.chat.completions.create({
 			model: this.modelName,
@@ -130,6 +141,8 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			tools: functions,
 			tool_choice: functions.length > 0 ? "auto" : "none",
 			stream: true,
+			reasoning_effort: options?.reasoning,
+			verbosity: options?.verbosity,
 		});
 		return this.createOpenAIStreamAdapter(stream);
 	}

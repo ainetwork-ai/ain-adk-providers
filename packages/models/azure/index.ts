@@ -85,8 +85,8 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		const response = await this.client.chat.completions.create({
 			model: this.modelName,
 			messages,
-			reasoning_effort: options?.reasoning || "none",
-			verbosity: options?.verbosity || "low",
+			reasoning_effort: options?.reasoning,
+			verbosity: options?.verbosity,
 		});
 
 		return {

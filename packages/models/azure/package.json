@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk",
+    "@ainetwork/adk": "^0.3.0",
     "openai": "^6.9.1"
   },
   "devDependencies": {

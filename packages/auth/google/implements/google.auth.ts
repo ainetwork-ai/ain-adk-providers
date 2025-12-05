@@ -22,6 +22,20 @@ interface GoogleTokenPayload {
   azp?: string;
 }
 
+interface GoogleTokenInfoResponse {
+  azp: string;
+  aud: string;
+  sub: string;
+  scope: string;
+  exp: string;
+  expires_in: string;
+  email?: string;
+  email_verified?: string;
+  access_type?: string;
+  error?: string;
+  error_description?: string;
+}
+
 interface NextAuthJWTPayload {
   name?: string;
   email?: string;
@@ -84,6 +98,25 @@ export class GoogleAuth extends BaseAuth {
     });
   }
 
+  private async verifyGoogleAccessToken(token: string): Promise<GoogleTokenInfoResponse> {
+    const response = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`
+    );
+
+    const data = await response.json() as GoogleTokenInfoResponse;
+
+    if (data.error) {
+      throw new Error(data.error_description || data.error);
+    }
+
+    // Verify the token is for our client
+    if (data.aud !== this.config.clientId && data.azp !== this.config.clientId) {
+      throw new Error("Token was not issued for this client");
+    }
+
+    return data;
+  }
+
   private verifyNextAuthToken(token: string): Promise<NextAuthJWTPayload> {
     return new Promise((resolve, reject) => {
       if (!this.config.nextAuthSecret) {
@@ -108,6 +141,10 @@ export class GoogleAuth extends BaseAuth {
     });
   }
 
+  private isGoogleAccessToken(token: string): boolean {
+    return token.startsWith("ya29.");
+  }
+
   public async authenticate(req: any, res: any): Promise<AuthResponse> {
     const token = this.extractBearerToken(req);
     if (!token) {
@@ -126,11 +163,24 @@ export class GoogleAuth extends BaseAuth {
             };
           }
         } catch {
-          // If NextAuth verification fails, try Google ID token verification
+          // If NextAuth verification fails, try other methods
         }
       }
 
-      // Try to verify as Google ID token
+      // Check if it's a Google Access Token (starts with "ya29.")
+      if (this.isGoogleAccessToken(token)) {
+        const tokenInfo = await this.verifyGoogleAccessToken(token);
+        if (tokenInfo.sub) {
+          return {
+            isAuthenticated: true,
+            userId: tokenInfo.sub,
+          };
+        }
+        console.error("Google auth verification failed: Token does not contain sub claim");
+        return { isAuthenticated: false };
+      }
+
+      // Try to verify as Google ID token (JWT)
       const payload = await this.verifyGoogleIdToken(token);
 
       if (!payload.sub) {

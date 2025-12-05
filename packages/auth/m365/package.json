@@ -22,13 +22,12 @@
   },
   "dependencies": {
     "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk",
-    "@types/passport-azure-ad": "^4.3.6",
-    "passport": "^0.7.0",
-    "passport-azure-ad": "^4.3.5"
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/passport": "^1.0.17",
+    "@types/jsonwebtoken": "^9.0.7",
     "typescript": "^5.0.0"
   },
   "license": "MIT",

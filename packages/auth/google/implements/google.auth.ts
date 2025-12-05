@@ -4,25 +4,22 @@ import type { Request } from "express";
 import jwt, { JwtHeader, SigningKeyCallback } from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 
-export interface M365AuthConfig {
+export interface GoogleAuthConfig {
   clientId: string;
-  tenantId: string;
-  cloudInstance?: string;
   nextAuthSecret?: string;
 }
 
-interface AzureADTokenPayload {
+interface GoogleTokenPayload {
   aud: string;
   iss: string;
   iat: number;
-  nbf: number;
   exp: number;
-  oid?: string;
-  sub?: string;
-  tid?: string;
-  preferred_username?: string;
+  sub: string;
   email?: string;
+  email_verified?: boolean;
   name?: string;
+  picture?: string;
+  azp?: string;
 }
 
 interface NextAuthJWTPayload {
@@ -35,18 +32,19 @@ interface NextAuthJWTPayload {
   jti?: string;
 }
 
-export class M365Auth extends BaseAuth {
-  private readonly jwksClient: jwksClient.JwksClient;
-  private readonly cloudInstance: string;
-  private readonly expectedIssuer: string;
+const GOOGLE_ISSUERS: [string, ...string[]] = [
+  "https://accounts.google.com",
+  "accounts.google.com",
+];
 
-  constructor(private readonly config: M365AuthConfig) {
+export class GoogleAuth extends BaseAuth {
+  private readonly jwksClient: jwksClient.JwksClient;
+
+  constructor(private readonly config: GoogleAuthConfig) {
     super();
-    this.cloudInstance = this.config.cloudInstance || "https://login.microsoftonline.com";
-    this.expectedIssuer = `${this.cloudInstance}/${this.config.tenantId}/v2.0`;
 
     this.jwksClient = jwksClient({
-      jwksUri: `${this.cloudInstance}/${this.config.tenantId}/discovery/v2.0/keys`,
+      jwksUri: "https://www.googleapis.com/oauth2/v3/certs",
       cache: true,
       cacheMaxAge: 86400000, // 24 hours
       rateLimit: true,
@@ -65,7 +63,7 @@ export class M365Auth extends BaseAuth {
     });
   };
 
-  private verifyAzureADToken(token: string): Promise<AzureADTokenPayload> {
+  private verifyGoogleIdToken(token: string): Promise<GoogleTokenPayload> {
     return new Promise((resolve, reject) => {
       jwt.verify(
         token,
@@ -73,14 +71,14 @@ export class M365Auth extends BaseAuth {
         {
           algorithms: ["RS256"],
           audience: this.config.clientId,
-          issuer: this.expectedIssuer,
+          issuer: GOOGLE_ISSUERS,
         },
         (err: Error | null, decoded: unknown) => {
           if (err) {
             reject(err);
             return;
           }
-          resolve(decoded as AzureADTokenPayload);
+          resolve(decoded as GoogleTokenPayload);
         }
       );
     });
@@ -99,7 +97,7 @@ export class M365Auth extends BaseAuth {
         {
           algorithms: ["HS256"],
         },
-        (err: Error | null, decoded: unknown) => {
+        (err, decoded) => {
           if (err) {
             reject(err);
             return;
@@ -128,24 +126,24 @@ export class M365Auth extends BaseAuth {
             };
           }
         } catch {
-          // If NextAuth verification fails, try Azure AD token verification
+          // If NextAuth verification fails, try Google ID token verification
         }
       }
 
-      // Try to verify as Azure AD token
-      const payload = await this.verifyAzureADToken(token);
+      // Try to verify as Google ID token
+      const payload = await this.verifyGoogleIdToken(token);
 
-      if (!payload.oid && !payload.sub) {
-        console.error("M365 auth verification failed: Token does not contain oid or sub claim");
+      if (!payload.sub) {
+        console.error("Google auth verification failed: Token does not contain sub claim");
         return { isAuthenticated: false };
       }
 
       return {
         isAuthenticated: true,
-        userId: (payload.oid || payload.sub) as string,
+        userId: payload.sub,
       };
     } catch (err) {
-      console.error("M365 auth verification failed:", (err as Error).message);
+      console.error("Google auth verification failed:", (err as Error).message);
       return { isAuthenticated: false };
     }
   }

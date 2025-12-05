@@ -23,18 +23,6 @@
     uuid "^11.1.0"
     winston "^3.17.0"
 
-"@ainetwork/adk@file:../ain-adk":
-  version "0.3.0"
-  dependencies:
-    "@a2a-js/sdk" "^0.3.5"
-    "@modelcontextprotocol/sdk" "^1.22.0"
-    cors "^2.8.5"
-    dotenv "^16.5.0"
-    express "^5.1.0"
-    http-status-codes "^2.3.0"
-    uuid "^11.1.0"
-    winston "^3.17.0"
-
 "@babel/code-frame@^7.0.0":
   version "7.27.1"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.27.1.tgz#200f715e66d52a23b221a9435534a91cc13ad5be"

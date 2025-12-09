@@ -38,12 +38,16 @@ interface NextAuthJWTPayload {
 export class M365Auth extends BaseAuth {
   private readonly jwksClient: jwksClient.JwksClient;
   private readonly cloudInstance: string;
-  private readonly expectedIssuer: string;
+  private readonly expectedIssuers: [string, ...string[]];
 
   constructor(private readonly config: M365AuthConfig) {
     super();
     this.cloudInstance = this.config.cloudInstance || "https://login.microsoftonline.com";
-    this.expectedIssuer = `${this.cloudInstance}/${this.config.tenantId}/v2.0`;
+    // Support both v1.0 and v2.0 issuers
+    this.expectedIssuers = [
+      `${this.cloudInstance}/${this.config.tenantId}/v2.0`,
+      `https://sts.windows.net/${this.config.tenantId}/`,
+    ] as [string, ...string[]];
 
     this.jwksClient = jwksClient({
       jwksUri: `${this.cloudInstance}/${this.config.tenantId}/discovery/v2.0/keys`,
@@ -73,7 +77,7 @@ export class M365Auth extends BaseAuth {
         {
           algorithms: ["RS256"],
           audience: this.config.clientId,
-          issuer: this.expectedIssuer,
+          issuer: this.expectedIssuers,
         },
         (err: Error | null, decoded: unknown) => {
           if (err) {

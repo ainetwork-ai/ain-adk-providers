@@ -20,6 +20,8 @@ interface AzureADTokenPayload {
   oid?: string;
   sub?: string;
   tid?: string;
+  appid?: string;
+  azp?: string;
   preferred_username?: string;
   email?: string;
   name?: string;
@@ -76,7 +78,6 @@ export class M365Auth extends BaseAuth {
         this.getSigningKey,
         {
           algorithms: ["RS256"],
-          audience: this.config.clientId,
           issuer: this.expectedIssuers,
         },
         (err: Error | null, decoded: unknown) => {
@@ -84,7 +85,18 @@ export class M365Auth extends BaseAuth {
             reject(err);
             return;
           }
-          resolve(decoded as AzureADTokenPayload);
+
+          const payload = decoded as AzureADTokenPayload;
+
+          // For Access Tokens, verify appid or azp matches clientId
+          // For ID Tokens, verify aud matches clientId
+          const appId = payload.appid || payload.azp;
+          if (payload.aud !== this.config.clientId && appId !== this.config.clientId) {
+            reject(new Error("Token was not issued for this client"));
+            return;
+          }
+
+          resolve(payload);
         }
       );
     });

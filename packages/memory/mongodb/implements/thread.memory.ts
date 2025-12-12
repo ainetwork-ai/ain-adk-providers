@@ -1,14 +1,27 @@
 import type { MessageObject, ThreadMetadata, ThreadObject, ThreadType } from "@ainetwork/adk/types/memory";
 import { MessageRole } from "@ainetwork/adk/types/memory";
 import { IThreadMemory } from "@ainetwork/adk/modules";
-import { MongoDBMemory } from "./base.memory";
 import { ThreadDocument, ThreadModel } from "../models/threads.model";
 import { MessageDocument, MessageModel } from "../models/messages.model";
 import { loggers } from "@ainetwork/adk/utils/logger";
 
-export class MongoDBThread extends MongoDBMemory implements IThreadMemory {
-  constructor(uri: string) {
-    super(uri);
+export type ExecuteWithRetryFn = <T>(
+  operation: () => Promise<T>,
+  operationName?: string
+) => Promise<T>;
+
+export type GetOperationTimeoutFn = () => number;
+
+export class MongoDBThread implements IThreadMemory {
+  private executeWithRetry: ExecuteWithRetryFn;
+  private getOperationTimeout: GetOperationTimeoutFn;
+
+  constructor(
+    executeWithRetry: ExecuteWithRetryFn,
+    getOperationTimeout: GetOperationTimeoutFn
+  ) {
+    this.executeWithRetry = executeWithRetry;
+    this.getOperationTimeout = getOperationTimeout;
   }
 
   public async getThread(

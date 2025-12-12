@@ -1,9 +1,26 @@
 import type { Intent } from "@ainetwork/adk/types/memory";
 import { IIntentMemory } from "@ainetwork/adk/modules";
-import { MongoDBMemory } from "./base.memory";
 import { IntentModel } from "../models/intent.model";
 
-export class MongoDBIntent extends MongoDBMemory implements IIntentMemory {
+export type ExecuteWithRetryFn = <T>(
+  operation: () => Promise<T>,
+  operationName?: string
+) => Promise<T>;
+
+export type GetOperationTimeoutFn = () => number;
+
+export class MongoDBIntent implements IIntentMemory {
+  private executeWithRetry: ExecuteWithRetryFn;
+  private getOperationTimeout: GetOperationTimeoutFn;
+
+  constructor(
+    executeWithRetry: ExecuteWithRetryFn,
+    getOperationTimeout: GetOperationTimeoutFn
+  ) {
+    this.executeWithRetry = executeWithRetry;
+    this.getOperationTimeout = getOperationTimeout;
+  }
+
   public async getIntent(intentId: string): Promise<Intent | undefined> {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();

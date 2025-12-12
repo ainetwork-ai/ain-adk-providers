@@ -1,2 +1,1 @@
-export { InMemoryThread } from "./implements/thread.memory";
-export { InMemoryIntent } from "./implements/intent.memory";
+export { InMemoryMemory } from "./implements/base.memory";

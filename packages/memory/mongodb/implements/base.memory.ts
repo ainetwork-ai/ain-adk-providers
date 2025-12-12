@@ -1,6 +1,9 @@
-import { IMemory } from "node_modules/@ainetwork/adk/dist/esm/modules/memory/base.memory";
+import { IAgentMemory, IIntentMemory, IMemory, IThreadMemory } from "node_modules/@ainetwork/adk/dist/esm/modules/memory/base.memory";
 import mongoose from "mongoose";
 import { loggers } from "@ainetwork/adk/utils/logger";
+import { MongoDBAgent } from "./agent.memory";
+import { MongoDBIntent } from "./intent.memory";
+import { MongoDBThread } from "./thread.memory";
 
 export interface MongoDBMemoryConfig {
   uri: string;
@@ -25,6 +28,10 @@ export class MongoDBMemory implements IMemory {
   private eventListenersSetup: boolean = false;
   private operationTimeoutMS: number;
 
+  private agentMemory: MongoDBAgent;
+  private intentMemory: MongoDBIntent;
+  private threadMemory: MongoDBThread;
+
   constructor(config: string | MongoDBMemoryConfig) {
     const cfg = typeof config === 'string' ? { uri: config } : config;
 
@@ -48,6 +55,33 @@ export class MongoDBMemory implements IMemory {
       this.connected = MongoDBMemory.instance.connected;
       this.operationTimeoutMS = MongoDBMemory.instance.operationTimeoutMS;
     }
+
+		this.agentMemory = new MongoDBAgent(
+			this.executeWithRetry.bind(this),
+			this.getOperationTimeout.bind(this)
+		);
+
+		this.threadMemory = new MongoDBThread(
+			this.executeWithRetry.bind(this),
+			this.getOperationTimeout.bind(this)
+		);
+
+		this.intentMemory = new MongoDBIntent(
+			this.executeWithRetry.bind(this),
+			this.getOperationTimeout.bind(this)
+		);
+  }
+
+  public getAgentMemory(): IAgentMemory {
+    return this.agentMemory;
+  }
+
+  public getThreadMemory(): IThreadMemory {
+    return this.threadMemory;
+  }
+
+  public getIntentMemory(): IIntentMemory {
+    return this.intentMemory;
   }
 
   private setupMongooseEventListeners(): void {

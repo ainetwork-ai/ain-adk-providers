@@ -1,4 +1,4 @@
-import { BaseModel } from "@ainetwork/adk/modules";
+import { BaseModel, ModelFetchOptions } from "@ainetwork/adk/modules";
 import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
@@ -15,6 +15,7 @@ import {
 	type FunctionDeclaration,
 	type GenerateContentResponse,
 	GoogleGenAI,
+	Model,
 } from "@google/genai";
 
 export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
@@ -68,7 +69,7 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		});
 	}
 
-	async fetch(messages: Content[]): Promise<FetchResponse> {
+	async fetch(messages: Content[], options?: ModelFetchOptions): Promise<FetchResponse> {
 		const response = await this.client.models.generateContent({
 			model: this.modelName,
 			contents: messages,
@@ -80,6 +81,7 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 	async fetchWithContextMessage(
 		messages: Content[],
 		functions: FunctionDeclaration[],
+		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
 		if (functions.length > 0) {
 			const response = await this.client.models.generateContent({
@@ -116,6 +118,7 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 	async fetchStreamWithContextMessage(
 		messages: Content[],
 		functions: FunctionDeclaration[],
+		options?: ModelFetchOptions,
 	): Promise<LLMStream> {
 		const stream = await this.client.models.generateContentStream({
 			model: this.modelName,

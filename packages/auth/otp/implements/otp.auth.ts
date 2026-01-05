@@ -64,7 +64,7 @@ export class OTPAuth extends BaseAuth {
         return { isAuthenticated: false };
       }
     } catch (err) {
-      console.error("Google auth verification failed:", (err as Error).message);
+      console.error("OTP auth verification failed:", (err as Error).message);
       return { isAuthenticated: false };
     }
   }

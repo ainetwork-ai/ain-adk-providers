@@ -3,7 +3,7 @@ import { AuthResponse } from "@ainetwork/adk/types/auth";
 import type { Request } from "express";
 import jwt from "jsonwebtoken";
 
-export interface OTPAuthConfig {
+export interface NextAuthConfig {
   nextAuthSecret: string;
 }
 
@@ -17,8 +17,8 @@ interface NextAuthJWTPayload {
   jti?: string;
 }
 
-export class OTPAuth extends BaseAuth {
-  constructor(private readonly config: OTPAuthConfig) {
+export class NextAuth extends BaseAuth {
+  constructor(private readonly config: NextAuthConfig) {
     super();
   }
 

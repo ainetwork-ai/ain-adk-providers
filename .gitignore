@@ -2,8 +2,13 @@ node_modules
 dist
 
 packages/**/yarn.lock
+packages/**/package-lock.json
 examples/**/yarn.lock
+examples/**/package-lock.json
 
 .env
 
 lerna-debug.log
+
+.channels_cache.json
+.users_cache.json

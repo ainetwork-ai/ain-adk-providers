@@ -3,7 +3,15 @@
   "version": "independent",
   "packages": [
     "packages/memory/*",
-    "packages/models/*"
+    "packages/models/*",
+    "packages/auth/*",
+    "examples/*"
   ],
-  "npmClient": "yarn"
+  "npmClient": "yarn",
+  "command": {
+    "publish": {
+      "ignoreChanges": ["examples/**"],
+      "message": "chore(release): publish"
+    }
+  }
 }

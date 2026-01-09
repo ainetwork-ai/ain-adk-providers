@@ -1,16 +1,20 @@
-import { BaseModel } from "@ainetwork/adk/modules";
-import { ChatRole, type SessionObject } from "@ainetwork/adk/types/memory";
+import { BaseModel, ModelFetchOptions } from "@ainetwork/adk/modules";
+import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
+import type {
+	LLMStream,
+	StreamChunk,
+	ToolCallDelta,
+} from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
-	IA2ATool,
-	IAgentTool,
-	IMCPTool,
 	ToolCall,
-} from "@ainetwork/adk/types/tool";
-import { TOOL_PROTOCOL_TYPE } from "@ainetwork/adk/types/tool";
+	ConnectorTool,
+} from "@ainetwork/adk/types/connector";
 import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,
+	ChatCompletionChunk,
+	ChatCompletionMessageFunctionToolCall,
 	ChatCompletionMessageToolCall,
 	ChatCompletionTool,
 } from "openai/resources";
@@ -34,12 +38,12 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		this.modelName = modelName;
 	}
 
-	private getMessageRole(role: ChatRole) {
+	private getMessageRole(role: MessageRole) {
 		switch (role) {
-			case ChatRole.USER:
+			case MessageRole.USER:
 				return "user";
-			case ChatRole.MODEL:
-			case ChatRole.SYSTEM:
+			case MessageRole.MODEL:
+			case MessageRole.SYSTEM:
 				return "system";
 			default:
 				return "system"; /*FIXME*/
@@ -48,20 +52,19 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 
 	generateMessages(params: {
 		query: string;
-		sessionHistory?: SessionObject;
+		thread?: ThreadObject;
 		systemPrompt?: string;
 	}): CCMessageParam[] {
-		const { query, sessionHistory, systemPrompt } = params;
+		const { query, thread, systemPrompt } = params;
 		const messages: CCMessageParam[] = !systemPrompt
 			? []
 			: [{ role: "system", content: systemPrompt.trim() }];
-		const sessionContent: CCMessageParam[] = !sessionHistory
+		const sessionContent: CCMessageParam[] = !thread
 			? []
-			: Object.keys(sessionHistory.chats).map((chatId: string) => {
-					const chat = sessionHistory.chats[chatId];
+			: thread.messages.map((message: MessageObject) => {
 					return {
-						role: this.getMessageRole(chat.role),
-						content: chat.content.parts[0],
+						role: this.getMessageRole(message.role),
+						content: message.content.parts[0],
 					};
 				});
 		const userContent: CCMessageParam = { role: "user", content: query };
@@ -75,10 +78,15 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		});
 	}
 
-	async fetch(messages: CCMessageParam[]): Promise<FetchResponse> {
+	async fetch(
+		messages: CCMessageParam[],
+		options?: ModelFetchOptions,
+	): Promise<FetchResponse> {
 		const response = await this.client.chat.completions.create({
 			model: this.modelName,
 			messages,
+			reasoning_effort: options?.reasoning,
+			verbosity: options?.verbosity,
 		});
 
 		return {
@@ -89,23 +97,27 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 	async fetchWithContextMessage(
 		messages: CCMessageParam[],
 		functions: ChatCompletionTool[],
+		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
 		if (functions.length > 0) {
 			const response = await this.client.chat.completions.create({
 				model: this.modelName,
 				messages,
 				tools: functions,
-				tool_choice: "auto",
+				tool_choice: functions.length > 0 ? "auto" : "none",
+				reasoning_effort: options?.reasoning,
+				verbosity: options?.verbosity,
 			});
 
 			const { content, tool_calls } = response.choices[0].message;
 
 			const toolCalls: ToolCall[] | undefined = tool_calls?.map(
 				(value: ChatCompletionMessageToolCall) => {
+					const v = value as ChatCompletionMessageFunctionToolCall;
 					return {
-						name: value.function.name,
+						name: v.function.name,
 						// FIXME: value.function.arguments could not be a valid JSON
-						arguments: JSON.parse(value.function.arguments),
+						arguments: JSON.parse(v.function.arguments),
 					};
 				},
 			);
@@ -118,33 +130,72 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		return await this.fetch(messages);
 	}
 
-	convertToolsToFunctions(tools: IAgentTool[]): ChatCompletionTool[] {
+	async fetchStreamWithContextMessage(
+		messages: CCMessageParam[],
+		functions: ChatCompletionTool[],
+		options?: ModelFetchOptions,
+	): Promise<LLMStream> {
+		const stream = await this.client.chat.completions.create({
+			model: this.modelName,
+			messages,
+			tools: functions,
+			tool_choice: functions.length > 0 ? "auto" : "none",
+			stream: true,
+			reasoning_effort: options?.reasoning,
+			verbosity: options?.verbosity,
+		});
+		return this.createOpenAIStreamAdapter(stream);
+	}
+
+	// NOTE(yoojin): Need to switch API Stream type to LLMStream.
+	private createOpenAIStreamAdapter(
+		openaiStream: AsyncIterable<ChatCompletionChunk>,
+	): LLMStream {
+		return {
+			async *[Symbol.asyncIterator](): AsyncIterator<StreamChunk> {
+				for await (const openaiChunk of openaiStream) {
+					const choice = openaiChunk.choices[0];
+					if (choice) {
+						const streamChunk: StreamChunk = {
+							delta: {
+								role: choice.delta.role,
+								content: choice.delta.content || undefined,
+								tool_calls: choice.delta.tool_calls?.map(
+									(tc) =>
+										({
+											index: tc.index,
+											id: tc.id,
+											type: tc.type,
+											function: tc.function,
+										}) as ToolCallDelta,
+								),
+							},
+							finish_reason: choice.finish_reason as any,
+							metadata: {
+								provider: "openai",
+								model: openaiChunk.model,
+								id: openaiChunk.id,
+							},
+						};
+						yield streamChunk;
+					}
+				}
+			},
+			metadata: { provider: "openai" },
+		};
+	}
+
+	convertToolsToFunctions(tools: ConnectorTool[]): ChatCompletionTool[] {
 		const functions: ChatCompletionTool[] = [];
 		for (const tool of tools) {
-			if (!tool.enabled) {
-				continue;
-			}
-			if (tool.protocol === TOOL_PROTOCOL_TYPE.MCP) {
-				const { mcpTool, id } = tool as IMCPTool;
-				functions.push({
-					type: "function",
-					function: {
-						name: id,
-						description: mcpTool.description,
-						parameters: mcpTool.inputSchema,
-					},
-				});
-			} else {
-				// PROTOCOL_TYPE.A2A
-				const { id, card } = tool as IA2ATool;
-				functions.push({
-					type: "function",
-					function: {
-						name: id,
-						description: card.description,
-					},
-				});
-			}
+			functions.push({
+				type: "function",
+				function: {
+					name: tool.toolName,
+					description: tool.description,
+					parameters: tool.inputSchema,
+				},
+			});
 		}
 		return functions;
 	}

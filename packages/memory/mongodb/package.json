@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-memory-mongodb",
-  "version": "0.1.1",
+  "version": "0.3.2",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {
@@ -13,12 +13,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
     "./models/*": {
       "types": "./dist/models/*.d.ts",
       "import": "./dist/models/*.js",
-      "require": "./dist/models/*.cjs"
+      "require": "./dist/models/*.cjs",
+      "default": "./dist/models/*.js"
     }
   },
   "scripts": {
@@ -26,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.1.2",
+    "@ainetwork/adk": "^0.3.2",
     "mongoose": "^8.16.5"
   },
   "devDependencies": {

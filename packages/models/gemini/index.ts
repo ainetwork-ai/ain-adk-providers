@@ -3,6 +3,7 @@ import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/ty
 import type {
 	LLMStream,
 	StreamChunk,
+	ToolCallDelta,
 } from "@ainetwork/adk/types/stream";
 import type {
 	FetchResponse,
@@ -126,7 +127,7 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 			config: { tools: [{ functionDeclarations: functions }] },
 		});
 
-		return await this.createGeminiStreamAdapter(stream);
+		return this.createGeminiStreamAdapter(stream);
 	}
 
 	// NOTE(yoojin): Need to switch API Stream type to LLMStream.
@@ -141,39 +142,55 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 
 		return {
 			async *[Symbol.asyncIterator](): AsyncIterator<StreamChunk> {
+				let toolCallIndex = 0;
 				for await (const geminiChunk of geminiStream) {
-					yield {
-						delta: {
-							role: geminiChunk.candidates?.[0]?.content?.role,
-							content:
-								geminiChunk.candidates?.[0]?.content?.parts?.[0]?.text ||
-								undefined,
-							tool_calls: hasName(
-								geminiChunk.candidates?.[0]?.content?.parts?.[0]
-									?.functionCall || {},
-							)
-								? ([
-										{
-											index: 0,
-											id:
-												geminiChunk.candidates?.[0]?.content?.parts?.[0]
-													?.functionCall?.id || "id",
-											function: {
-												name: geminiChunk.candidates?.[0]?.content?.parts?.[0]
-													?.functionCall?.name,
-												arguments:
-                          JSON.stringify(geminiChunk.candidates?.[0]?.content?.parts?.[0]
-                            ?.functionCall?.args),
-											},
-										},
-									])
-								: undefined,
-						},
-						finish_reason: geminiChunk.candidates?.[0]?.finishReason as any,
-						metadata: {
-							provider: "gemini",
-						},
-					};
+					const content = geminiChunk.candidates?.[0]?.content;
+					if (!content) continue;
+
+					const tool_calls: ToolCallDelta[] = [];
+					let textContent = "";
+
+					// Process all parts in the array
+					for (const part of content.parts || []) {
+						if (part.text) {
+							textContent += part.text;
+						} else if (part.functionCall && hasName(part.functionCall)) {
+							tool_calls.push({
+								index: toolCallIndex++,
+								id: part.functionCall.id || `call_${toolCallIndex}`,
+								function: {
+									name: part.functionCall.name,
+									arguments: JSON.stringify(part.functionCall.args),
+								},
+							} as unknown as ToolCallDelta);
+						}
+					}
+
+					// Only yield when there's text content
+					if (textContent) {
+						yield {
+							delta: {
+								role: content.role,
+								content: textContent,
+								tool_calls: undefined,
+							},
+							finish_reason: geminiChunk.candidates?.[0]?.finishReason as any,
+							metadata: { provider: "gemini" },
+						};
+					}
+
+					// Only yield when there are tool calls
+					if (tool_calls.length > 0) {
+						yield {
+							delta: {
+								role: content.role,
+								content: undefined,
+								tool_calls,
+							},
+							finish_reason: geminiChunk.candidates?.[0]?.finishReason as any,
+							metadata: { provider: "gemini" },
+						};
+					}
 				}
 			},
 		};

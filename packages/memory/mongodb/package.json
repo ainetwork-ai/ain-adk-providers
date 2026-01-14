@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.3.2",
+    "@ainetwork/adk": "^0.3.3",
     "mongoose": "^8.16.5"
   },
   "devDependencies": {

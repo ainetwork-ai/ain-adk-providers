@@ -1,4 +1,4 @@
-import { BaseAuth } from "@ainetwork/adk/modules";
+import { AuthModule } from "@ainetwork/adk/modules";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 import type { Request } from "express";
 import jwt, { JwtHeader, SigningKeyCallback } from "jsonwebtoken";
@@ -51,7 +51,7 @@ const GOOGLE_ISSUERS: [string, ...string[]] = [
   "accounts.google.com",
 ];
 
-export class GoogleAuth extends BaseAuth {
+export class GoogleAuth extends AuthModule {
   private readonly jwksClient: jwksClient.JwksClient;
 
   constructor(private readonly config: GoogleAuthConfig) {

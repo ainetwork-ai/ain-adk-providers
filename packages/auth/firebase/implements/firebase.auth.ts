@@ -1,4 +1,4 @@
-import { BaseAuth } from "@ainetwork/adk/modules";
+import { AuthModule } from "@ainetwork/adk/modules";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 import type { Request, Response } from "express";
 import { initializeApp, cert, type App } from "firebase-admin/app";
@@ -10,7 +10,7 @@ export interface FirebaseConfig {
   clientEmail: string;
 }
 
-export class FirebaseAuth extends BaseAuth {
+export class FirebaseAuth extends AuthModule {
   private readonly adminApp: App;
 
   constructor(config: FirebaseConfig) {

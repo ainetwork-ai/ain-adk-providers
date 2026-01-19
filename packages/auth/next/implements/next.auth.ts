@@ -1,4 +1,4 @@
-import { BaseAuth } from "@ainetwork/adk/modules";
+import { AuthModule } from "@ainetwork/adk/modules";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 import type { Request } from "express";
 import jwt from "jsonwebtoken";
@@ -17,7 +17,7 @@ interface NextAuthJWTPayload {
   jti?: string;
 }
 
-export class NextAuth extends BaseAuth {
+export class NextAuth extends AuthModule {
   constructor(private readonly config: NextAuthConfig) {
     super();
   }

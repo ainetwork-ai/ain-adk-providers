@@ -80,7 +80,17 @@ export class InMemoryThread implements IThreadMemory {
   public async deleteThread(userId: string, threadId: string): Promise<void> {
     const key = this.generateKey(userId, threadId);
     this.threads.delete(key);
-    this.userThreadIndex.delete(threadId);
+
+    // userThreadIndex에서 해당 thread metadata 제거
+    const userThreads = this.userThreadIndex.get(userId);
+    if (userThreads) {
+      const metadataToDelete = Array.from(userThreads).find(
+        metadata => metadata.threadId === threadId
+      );
+      if (metadataToDelete) {
+        userThreads.delete(metadataToDelete);
+      }
+    }
   }
 
   public async listThreads(userId: string): Promise<ThreadMetadata[]> {

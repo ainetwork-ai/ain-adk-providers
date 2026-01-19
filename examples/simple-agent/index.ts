@@ -2,14 +2,14 @@ import "dotenv/config";
 
 import { AzureOpenAI } from "../../packages/models/azure";
 import { GeminiModel } from "../../packages/models/gemini";
-import { BaseAuth, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
+import { AuthModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
 import { InMemoryMemory } from "../../packages/memory/inmemory";
 import { AINAgent } from "@ainetwork/adk";
 import { AuthResponse } from "@ainetwork/adk/types/auth";
 
 const PORT = Number(process.env.PORT) || 9100;
 
-class NoAuthScheme extends BaseAuth {
+class NoAuthModule extends AuthModule {
 	public async authenticate(req: any, res: any): Promise<AuthResponse> {
 		return { isAuthenticated: true, userId: 'test-user-id' }
 	}
@@ -31,7 +31,7 @@ async function main() {
 	);
 	modelModule.addModel('gemini-2.5', geminiModel);
 
-	const memoryModule = new MemoryModule(new InMemoryMemory());
+	const memoryModule = new MemoryModule(new InMemoryMemory() as any);
 
 	const systemPrompt = `
 You are a highly sophisticated automated agent that can answer user queries by utilizing various tools and resources.
@@ -73,7 +73,7 @@ Refer to the usage instructions below for each <tool_type>.
    In this case, the answer should be generated using only MCP_Tool without using other A2A_Tools.
 </A2A_Tool>`
 
-	const authScheme = new NoAuthScheme();
+	const authModule = new NoAuthModule();
 
 	const manifest = {
 		name: "Simple Agent",
@@ -87,9 +87,7 @@ Refer to the usage instructions below for each <tool_type>.
 	};
 	const agent = new AINAgent(
 		manifest,
-		{ modelModule, memoryModule },
-		authScheme,
-		true
+		{ authModule, modelModule, memoryModule },
 	);
 
 	agent.start(PORT);

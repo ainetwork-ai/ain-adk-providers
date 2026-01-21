@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.3.4",
+    "@ainetwork/adk": "^0.3.5",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {

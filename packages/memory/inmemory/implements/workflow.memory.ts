@@ -23,38 +23,28 @@ export class InMemoryWorkflow implements IWorkflowMemory {
   }
 
   public async updateWorkflow(workflowId: string, updates: Partial<Workflow>): Promise<void> {
-    const existing = this.workflows.get(workflowId);
-    if (existing) {
-      const updated = { ...existing, ...updates, workflowId };
-
-      // userId가 변경된 경우 인덱스 업데이트
-      if (updates.userId !== undefined && existing.userId !== updates.userId) {
-        // 기존 userId 인덱스에서 제거
-        if (existing.userId) {
-          this.userWorkflowIndex.get(existing.userId)?.delete(workflowId);
-        }
-        // 새 userId 인덱스에 추가
-        if (updates.userId) {
-          if (!this.userWorkflowIndex.has(updates.userId)) {
-            this.userWorkflowIndex.set(updates.userId, new Set());
-          }
-          this.userWorkflowIndex.get(updates.userId)?.add(workflowId);
-        }
-      }
-
-      this.workflows.set(workflowId, updated);
+    if (!updates.userId) {
+      throw new Error("userId is required for updateWorkflow");
     }
+
+    const existing = this.workflows.get(workflowId);
+    if (!existing) {
+      throw new Error(`Workflow not found: ${workflowId}`);
+    }
+
+    if (existing.userId !== updates.userId) {
+      throw new Error("Unauthorized: userId does not match workflow owner");
+    }
+
+    const updated = { ...existing, ...updates, workflowId };
+    this.workflows.set(workflowId, updated);
   }
 
-  public async deleteWorkflow(workflowId: string): Promise<void> {
+  public async deleteWorkflow(workflowId: string, userId: string): Promise<void> {
     const workflow = this.workflows.get(workflowId);
-    if (workflow) {
+    if (workflow && workflow.userId === userId) {
       this.workflows.delete(workflowId);
-
-      // 인덱스에서도 제거
-      if (workflow.userId) {
-        this.userWorkflowIndex.get(workflow.userId)?.delete(workflowId);
-      }
+      this.userWorkflowIndex.get(userId)?.delete(workflowId);
     }
   }
 

@@ -40,19 +40,24 @@ export class MongoDBWorkflow implements IWorkflowMemory {
   }
 
   public async updateWorkflow(workflowId: string, updates: Partial<Workflow>): Promise<void> {
+    if (!updates.userId) {
+      throw new Error("userId is required for updateWorkflow");
+    }
+
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
+      // userId를 조건에 포함하여 소유자만 수정 가능하도록 함
       await WorkflowModel.updateOne(
-        { workflowId },
+        { workflowId, userId: updates.userId },
         { $set: updates }
       ).maxTimeMS(timeout);
     }, "updateWorkflow()");
   }
 
-  public async deleteWorkflow(workflowId: string): Promise<void> {
+  public async deleteWorkflow(workflowId: string, userId: string): Promise<void> {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
-      await WorkflowModel.deleteOne({ workflowId }).maxTimeMS(timeout);
+      await WorkflowModel.deleteOne({ workflowId, userId }).maxTimeMS(timeout);
     }, "deleteWorkflow()");
   }
 

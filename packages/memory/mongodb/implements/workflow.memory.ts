@@ -64,7 +64,11 @@ export class MongoDBWorkflow implements IWorkflowMemory {
   public async listWorkflows(userId?: string): Promise<Workflow[]> {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
-      const query = userId ? { userId } : {};
+      // userId가 있으면: 해당 유저 소유 + 템플릿(userId 없음)
+      // userId가 없으면: 템플릿만 반환
+      const query = userId
+        ? { $or: [{ userId }, { userId: { $exists: false } }, { userId: null }] }
+        : { $or: [{ userId: { $exists: false } }, { userId: null }] };
       const workflows = await WorkflowModel.find(query)
         .maxTimeMS(timeout)
         .lean<Workflow[]>();

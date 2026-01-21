@@ -49,22 +49,28 @@ export class InMemoryWorkflow implements IWorkflowMemory {
   }
 
   public async listWorkflows(userId?: string): Promise<Workflow[]> {
-    if (userId) {
-      const workflowIds = this.userWorkflowIndex.get(userId);
-      if (!workflowIds) {
-        return [];
-      }
+    const workflows: Workflow[] = [];
 
-      const workflows: Workflow[] = [];
-      for (const workflowId of workflowIds) {
-        const workflow = this.workflows.get(workflowId);
-        if (workflow) {
-          workflows.push(workflow);
-        }
+    // 템플릿 workflow (userId가 없는 것)은 항상 포함
+    for (const workflow of this.workflows.values()) {
+      if (!workflow.userId) {
+        workflows.push(workflow);
       }
-      return workflows;
     }
 
-    return Array.from(this.workflows.values());
+    // userId가 있으면 해당 유저 소유 workflow도 포함
+    if (userId) {
+      const userWorkflowIds = this.userWorkflowIndex.get(userId);
+      if (userWorkflowIds) {
+        for (const workflowId of userWorkflowIds) {
+          const workflow = this.workflows.get(workflowId);
+          if (workflow) {
+            workflows.push(workflow);
+          }
+        }
+      }
+    }
+
+    return workflows;
   }
 }

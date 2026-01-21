@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import { AzureOpenAI } from "../../packages/models/azure";
 import { GeminiModel } from "../../packages/models/gemini";
-import { MemoryModule, ModelModule } from "@ainetwork/adk/modules";
+import { AuthModule, MemoryModule, ModelModule } from "@ainetwork/adk/modules";
 import { InMemoryMemory } from "../../packages/memory/inmemory";
 import { AINAgent } from "@ainetwork/adk";
 import { FirebaseAuth } from "@ainetwork/adk-provider-auth-firebase";
@@ -23,10 +23,10 @@ async function main() {
   modelModule.addModel("gemini-2.5", geminiModel);
 
   const memoryModule = new MemoryModule(
-    new InMemoryMemory()
+    new InMemoryMemory() as any
   );
 
-  const authScheme = new FirebaseAuth({
+  const authModule = new FirebaseAuth({
     projectId: process.env.FIREBASE_PROJECT_ID!,
     privateKey: process.env.FIREBASE_PRIVATE_KEY!,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
@@ -37,13 +37,13 @@ async function main() {
   const authAdapter = {
     authenticate: (req: any, res: any, next?: any) => {
       // Delegate to the FirebaseAuth instance while using 'any' to bypass type mismatch
-      return (authScheme as any).authenticate(req, res, next);
+      return (authModule as any).authenticate(req, res, next);
     },
     // If the provider exposes additional methods like authorize, delegate them too
     authorize: (req: any) => {
-      return (authScheme as any).authorize ? (authScheme as any).authorize(req) : Promise.resolve(false);
+      return (authModule as any).authorize ? (authModule as any).authorize(req) : Promise.resolve(false);
     },
-  } as any;
+  } as AuthModule;
 
   const manifest = {
     name: "Firebase Auth Agent",
@@ -51,7 +51,10 @@ async function main() {
     version: "0.0.2", // Incremented version
     url: `http://localhost:${PORT}`,
   };
-  const agent = new AINAgent(manifest, { modelModule, memoryModule }, authAdapter, true);
+  const agent = new AINAgent(
+    manifest,
+    { authModule: authAdapter, modelModule, memoryModule }
+  );
 
   agent.start(PORT);
 }

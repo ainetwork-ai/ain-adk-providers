@@ -1,9 +1,10 @@
-import { IAgentMemory, IIntentMemory, IMemory, IThreadMemory } from "node_modules/@ainetwork/adk/dist/esm/modules/memory/base.memory";
+import { IAgentMemory, IIntentMemory, IMemory, IThreadMemory, IWorkflowMemory } from "@ainetwork/adk/modules";
 import mongoose from "mongoose";
 import { loggers } from "@ainetwork/adk/utils/logger";
 import { MongoDBAgent } from "./agent.memory";
 import { MongoDBIntent } from "./intent.memory";
 import { MongoDBThread } from "./thread.memory";
+import { MongoDBWorkflow } from "./workflow.memory";
 
 export interface MongoDBMemoryConfig {
   uri: string;
@@ -31,6 +32,7 @@ export class MongoDBMemory implements IMemory {
   private agentMemory: MongoDBAgent;
   private intentMemory: MongoDBIntent;
   private threadMemory: MongoDBThread;
+  private workflowMemory: MongoDBWorkflow;
 
   constructor(config: string | MongoDBMemoryConfig) {
     const cfg = typeof config === 'string' ? { uri: config } : config;
@@ -70,6 +72,11 @@ export class MongoDBMemory implements IMemory {
 			this.executeWithRetry.bind(this),
 			this.getOperationTimeout.bind(this)
 		);
+
+		this.workflowMemory = new MongoDBWorkflow(
+			this.executeWithRetry.bind(this),
+			this.getOperationTimeout.bind(this)
+		);
   }
 
   public getAgentMemory(): IAgentMemory {
@@ -82,6 +89,10 @@ export class MongoDBMemory implements IMemory {
 
   public getIntentMemory(): IIntentMemory {
     return this.intentMemory;
+  }
+
+  public getWorkflowMemory(): IWorkflowMemory {
+    return this.workflowMemory;
   }
 
   private setupMongooseEventListeners(): void {

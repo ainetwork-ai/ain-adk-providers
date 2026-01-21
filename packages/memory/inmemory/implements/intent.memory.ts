@@ -14,8 +14,10 @@ export class InMemoryIntent implements IIntentMemory {
   }
 
   public async saveIntent(intent: Intent): Promise<void> {
-    const newId = randomUUID();
-    this.intents.set(newId, intent);
+    // Intent에 이미 id가 있으면 그것을 사용하고, 없으면 새로 생성
+    const intentId = intent.id || randomUUID();
+    const intentToSave = { ...intent, id: intentId };
+    this.intents.set(intentId, intentToSave);
   }
 
   public async updateIntent(intentId: string, intent: Intent): Promise<void> {

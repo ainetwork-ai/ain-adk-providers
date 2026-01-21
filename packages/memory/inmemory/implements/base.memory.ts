@@ -1,7 +1,8 @@
-import { IAgentMemory, IIntentMemory, IMemory, IThreadMemory } from "node_modules/@ainetwork/adk/dist/esm/modules/memory/base.memory";
+import { IAgentMemory, IIntentMemory, IMemory, IThreadMemory, IWorkflowMemory } from "@ainetwork/adk/modules";
 import { InMemoryAgent } from "./agent.memory";
 import { InMemoryIntent } from "./intent.memory";
 import { InMemoryThread } from "./thread.memory";
+import { InMemoryWorkflow } from "./workflow.memory";
 
 export class InMemoryMemory implements IMemory {
   private static instance: InMemoryMemory;
@@ -10,6 +11,7 @@ export class InMemoryMemory implements IMemory {
   private agentMemory: InMemoryAgent;
   private intentMemory: InMemoryIntent;
   private threadMemory: InMemoryThread;
+  private workflowMemory: InMemoryWorkflow;
 
   constructor() {
     if (!InMemoryMemory.instance) {
@@ -19,6 +21,7 @@ export class InMemoryMemory implements IMemory {
     this.agentMemory = new InMemoryAgent();
     this.threadMemory = new InMemoryThread();
     this.intentMemory = new InMemoryIntent();
+    this.workflowMemory = new InMemoryWorkflow();
   }
 
   public async connect(): Promise<void> {
@@ -43,5 +46,9 @@ export class InMemoryMemory implements IMemory {
 
   public getIntentMemory(): IIntentMemory {
     return this.intentMemory;
+  }
+
+  public getWorkflowMemory(): IWorkflowMemory {
+    return this.workflowMemory;
   }
 }

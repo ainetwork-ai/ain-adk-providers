@@ -1,0 +1,78 @@
+import type { IWorkflowMemory } from "@ainetwork/adk/modules";
+import type { Workflow } from "@ainetwork/adk/types/memory";
+import { WorkflowModel } from "../models/workflow.model";
+
+export type ExecuteWithRetryFn = <T>(
+  operation: () => Promise<T>,
+  operationName?: string
+) => Promise<T>;
+
+export type GetOperationTimeoutFn = () => number;
+
+export class MongoDBWorkflow implements IWorkflowMemory {
+  private executeWithRetry: ExecuteWithRetryFn;
+  private getOperationTimeout: GetOperationTimeoutFn;
+
+  constructor(
+    executeWithRetry: ExecuteWithRetryFn,
+    getOperationTimeout: GetOperationTimeoutFn
+  ) {
+    this.executeWithRetry = executeWithRetry;
+    this.getOperationTimeout = getOperationTimeout;
+  }
+
+  public async createWorkflow(workflow: Workflow): Promise<Workflow> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      const created = await WorkflowModel.create(workflow);
+      return created.toObject() as Workflow;
+    }, "createWorkflow()");
+  }
+
+  public async getWorkflow(workflowId: string): Promise<Workflow | undefined> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      const workflow = await WorkflowModel.findOne({
+        workflowId
+      }).maxTimeMS(timeout).lean<Workflow>();
+      return workflow || undefined;
+    }, "getWorkflow()");
+  }
+
+  public async updateWorkflow(workflowId: string, updates: Partial<Workflow>): Promise<void> {
+    if (!updates.userId) {
+      throw new Error("userId is required for updateWorkflow");
+    }
+
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      // userId를 조건에 포함하여 소유자만 수정 가능하도록 함
+      await WorkflowModel.updateOne(
+        { workflowId, userId: updates.userId },
+        { $set: updates }
+      ).maxTimeMS(timeout);
+    }, "updateWorkflow()");
+  }
+
+  public async deleteWorkflow(workflowId: string, userId: string): Promise<void> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      await WorkflowModel.deleteOne({ workflowId, userId }).maxTimeMS(timeout);
+    }, "deleteWorkflow()");
+  }
+
+  public async listWorkflows(userId?: string): Promise<Workflow[]> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      // userId가 있으면: 해당 유저 소유 + 템플릿(userId 없음)
+      // userId가 없으면: 템플릿만 반환
+      const query = userId
+        ? { $or: [{ userId }, { userId: { $exists: false } }, { userId: null }] }
+        : { $or: [{ userId: { $exists: false } }, { userId: null }] };
+      const workflows = await WorkflowModel.find(query)
+        .maxTimeMS(timeout)
+        .lean<Workflow[]>();
+      return workflows;
+    }, "listWorkflows()");
+  }
+}

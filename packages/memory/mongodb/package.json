@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-memory-mongodb",
-  "version": "0.3.6",
+  "version": "0.3.5",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.3.5",
+    "@ainetwork/adk": "^0.3.6",
     "mongoose": "^8.16.5"
   },
   "devDependencies": {
@@ -37,5 +37,6 @@
   "license": "MIT",
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "gitHead": "f3826433065c36e8b7d047e536ad631405f83ca0"
 }

@@ -107,16 +107,12 @@ export class MongoDBThread implements IThreadMemory {
   public async deleteThread(userId: string, threadId: string): Promise<void> {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
-      const messages = await MessageModel.find({ userId, threadId })
-        .sort({ timestamp: 1 })
-        .maxTimeMS(timeout);
 
-      messages?.forEach((message: MessageDocument) => {
-        message.deleteOne();
-      });
+      // Delete all messages for this thread
+      await MessageModel.deleteMany({ userId, threadId }).maxTimeMS(timeout);
 
-      const thread = await ThreadModel.findOne({ userId, threadId }).maxTimeMS(timeout);
-      thread?.deleteOne();
+      // Delete the thread itself
+      await ThreadModel.deleteOne({ userId, threadId }).maxTimeMS(timeout);
     }, `deleteThread(${userId}, ${threadId})`);
   };
 

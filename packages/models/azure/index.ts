@@ -158,9 +158,9 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 					if (choice) {
 						const streamChunk: StreamChunk = {
 							delta: {
-								role: choice.delta.role,
-								content: choice.delta.content || undefined,
-								tool_calls: choice.delta.tool_calls?.map(
+								role: choice.delta?.role || undefined,
+								content: choice.delta?.content || undefined,
+								tool_calls: choice.delta?.tool_calls?.map(
 									(tc) =>
 										({
 											index: tc.index,

@@ -3,14 +3,20 @@ import mongoose from "mongoose";
 
 export const AgentObjectSchema = new Schema(
 	{
-		agent_prompt: {
+		id: {
+			type: String,
+			required: true,
+			unique: true,
+		},
+		prompt: {
 			type: String,
 		},
 	},
 );
 
 export interface AgentDocument extends Document {
-	agent_prompt: string;
+	id: string;
+	prompt: string;
 }
 
 export const AgentModel = mongoose.model<AgentDocument>("Agent", AgentObjectSchema);

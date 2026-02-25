@@ -19,22 +19,30 @@ import type {
 	ChatCompletionTool,
 } from "openai/resources";
 
+export interface AzureOpenAIConfig {
+	endpoint?: string;
+	deployment?: string;
+	baseUrl?: string;
+	apiKey: string;
+	apiVersion: string;
+	modelName: string;
+}
+
 export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 	private client: AzureOpenAIClient;
 	private modelName: string;
 
-	constructor(
-		baseUrl: string,
-		apiKey: string,
-		apiVersion: string,
-		modelName: string,
-	) {
+	constructor({
+		endpoint,
+		deployment,
+		baseUrl,
+		apiKey,
+		apiVersion,
+		modelName,
+	}: AzureOpenAIConfig) {
 		super();
-		this.client = new AzureOpenAIClient({
-			baseURL: baseUrl,
-			apiKey: apiKey,
-			apiVersion: apiVersion,
-		});
+		const options = { endpoint, apiKey, deployment, apiVersion, baseURL: baseUrl }
+		this.client = new AzureOpenAIClient(options);
 		this.modelName = modelName;
 	}
 

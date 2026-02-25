@@ -9,25 +9,10 @@
   dependencies:
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.3.6":
-  version "0.3.6"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.3.6.tgz#3b9bc04868a34efe5d2e4c9d976cdc044732fd5a"
-  integrity sha512-pkOFOAfCLVoaqy2SZD2o7TeGnzbtjBfxqAllO4PvAecqKpsrxTnfK7qversF9Rsu+DSIR//9PwdhNI3y/GYTRg==
-  dependencies:
-    "@a2a-js/sdk" "^0.3.7"
-    "@modelcontextprotocol/sdk" "^1.25.1"
-    cors "^2.8.5"
-    dotenv "^16.5.0"
-    express "^5.1.0"
-    http-status-codes "^2.3.0"
-    uuid "^11.1.0"
-    winston "^3.17.0"
-    winston-daily-rotate-file "^5.0.0"
-
-"@ainetwork/adk@^0.3.7":
-  version "0.3.7"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.3.7.tgz#ead824d56a05d50e3d9ef499e344023b33a10b16"
-  integrity sha512-Rg/KgmGVOqo1Gm3dcM9fSUL4u1PbB9GCuSt9mKzC39KfFHxMvh/elJYpfi/FRkv9XoR/aKu9vSk2T1hkxPSrOA==
+"@ainetwork/adk@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.4.0.tgz#61f4bc41e858b2c438cdff6d3a574f05f8919287"
+  integrity sha512-O9JYlurBCw2c86Bsj4xZRO3PSWfYsg1TftEh6IKj0MJZ+AsL9dqfd4URwuGWZcpldtbR/+4mJuDF2sHDZ6i4ng==
   dependencies:
     "@a2a-js/sdk" "^0.3.7"
     "@modelcontextprotocol/sdk" "^1.25.1"

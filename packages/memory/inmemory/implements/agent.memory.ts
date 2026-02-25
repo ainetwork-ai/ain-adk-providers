@@ -7,6 +7,8 @@ export class InMemoryAgent implements IAgentMemory {
   private singleTriggerPrompt: string = "";
   private multiTriggerPrompt: string = "";
   private toolSelectPrompt: string = "";
+  private piiDetectPrompt: string = "";
+  private piiFilterPrompt: string = "";
 
   public async getAgentPrompt(): Promise<string> {
     return this.agentPrompt;
@@ -34,5 +36,13 @@ export class InMemoryAgent implements IAgentMemory {
 
   public async getToolSelectPrompt(): Promise<string> {
     return this.toolSelectPrompt;
+  }
+
+  public async getPIIDetectPrompt(): Promise<string> {
+    return this.piiDetectPrompt;
+  }
+
+  public async getPIIFilterPrompt(): Promise<string> {
+    return this.piiFilterPrompt;
   }
 }

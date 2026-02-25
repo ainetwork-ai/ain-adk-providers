@@ -99,4 +99,26 @@ export class MongoDBAgent implements IAgentMemory {
       return metadata?.prompt || "";
     }, "getToolSelectPrompt()");
   };
+
+  public async getPIIDetectPrompt(): Promise<string> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      const metadata = await AgentModel.findOne({
+        id: "pii_detect_prompt"
+      }).maxTimeMS(timeout)
+        .lean<PromptDocument>();
+      return metadata?.prompt || "";
+    }, "getPIIDetectPrompt()");
+  };
+
+  public async getPIIFilterPrompt(): Promise<string> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      const metadata = await AgentModel.findOne({
+        id: "pii_filter_prompt"
+      }).maxTimeMS(timeout)
+        .lean<PromptDocument>();
+      return metadata?.prompt || "";
+    }, "getPIIFilterPrompt()");
+  };
 }

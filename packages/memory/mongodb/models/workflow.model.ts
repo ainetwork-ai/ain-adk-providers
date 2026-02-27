@@ -50,7 +50,7 @@ export interface WorkflowDocument extends Document {
 			id: string;
 			label: string;
 			type: "select" | "date_range" | "text" | "number";
-			options?: Array<{ value: string; label: string }>;
+			options?: Array<string>;
 		}
 	>;
 }

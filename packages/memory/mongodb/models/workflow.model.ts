@@ -28,6 +28,9 @@ export const WorkflowObjectSchema = new Schema(
 			type: String,
 			required: true,
 		},
+		variables: {
+			type: Schema.Types.Mixed,
+		},
 	},
 	{
 		timestamps: true,
@@ -41,6 +44,15 @@ export interface WorkflowDocument extends Document {
 	description: string;
 	active: boolean;
 	content: string;
+	variables?: Record<
+		string,
+		{
+			id: string;
+			label: string;
+			type: "select" | "date_range" | "text" | "number";
+			options?: Array<{ value: string; label: string }>;
+		}
+	>;
 }
 
 export const WorkflowModel = mongoose.model<WorkflowDocument>("Workflow", WorkflowObjectSchema);

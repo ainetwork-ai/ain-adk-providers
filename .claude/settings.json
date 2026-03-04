@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/shyun/comcom/ain-agent/ain-adk/src/types/**)",
+      "Read(//Users/shyun/comcom/ain-agent/ain-adk/src/**)",
+      "Bash(npx tsc --noEmit)"
+    ]
+  }
+}

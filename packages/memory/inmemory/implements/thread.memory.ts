@@ -4,6 +4,7 @@ import { IThreadMemory } from "@ainetwork/adk/modules";
 type InMemoryThreadObject = {
   type: ThreadType;
   title: string;
+  isPinned: boolean;
   messages: Array<MessageObject>;
 }
 
@@ -12,6 +13,7 @@ type InMemoryThreadMetadata = {
   userId: string;
   threadId: string;
   title: string;
+  isPinned: boolean;
   updatedAt: number;
   createdAt: number;
 }
@@ -36,6 +38,7 @@ export class InMemoryThread implements IThreadMemory {
         userId,
         type: res.type,
         title: res.title,
+        isPinned: res.isPinned,
         messages: res.messages,
       };
       return threadObject;
@@ -55,9 +58,9 @@ export class InMemoryThread implements IThreadMemory {
       this.userThreadIndex.set(userId, new Set());
     }
     if (!this.threads.has(key)) {
-      this.threads.set(key, { type, title, messages: [] });
+      this.threads.set(key, { type, title, isPinned: false, messages: [] });
       const metadata: InMemoryThreadMetadata = {
-        type, userId, threadId, title, createdAt: now, updatedAt: now,
+        type, userId, threadId, title, isPinned: false, createdAt: now, updatedAt: now,
       }
       this.userThreadIndex.get(userId)?.add(metadata);
     }
@@ -99,5 +102,27 @@ export class InMemoryThread implements IThreadMemory {
       return Array.from(threads);
     }
     return [];
+  }
+
+  public async updateThreadPin(
+    userId: string,
+    threadId: string,
+    isPinned: boolean
+  ): Promise<void> {
+    const key = this.generateKey(userId, threadId);
+    const thread = this.threads.get(key);
+    if (thread) {
+      thread.isPinned = isPinned;
+    }
+
+    const userThreads = this.userThreadIndex.get(userId);
+    if (userThreads) {
+      const metadata = Array.from(userThreads).find(
+        m => m.threadId === threadId
+      );
+      if (metadata) {
+        metadata.isPinned = isPinned;
+      }
+    }
   }
 }

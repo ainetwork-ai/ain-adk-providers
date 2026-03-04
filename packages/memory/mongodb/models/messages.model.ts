@@ -47,6 +47,9 @@ export const MessageObjectSchema = new Schema(
 			default: {},
 		},
 	},
+	{
+		timestamps: true,
+	},
 );
 
 // Message Document interface
@@ -60,6 +63,8 @@ export interface MessageDocument extends Document {
 		parts: any[];
 	};
 	timestamp: number;
+	createdAt: Date;
+	updatedAt: Date;
 	metadata?: { [key: string]: unknown };
 }
 

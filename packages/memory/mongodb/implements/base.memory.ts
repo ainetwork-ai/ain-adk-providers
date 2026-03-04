@@ -5,6 +5,7 @@ import { MongoDBAgent } from "./agent.memory";
 import { MongoDBIntent } from "./intent.memory";
 import { MongoDBThread } from "./thread.memory";
 import { MongoDBWorkflow } from "./workflow.memory";
+import { MessageModel } from "../models/messages.model";
 
 export interface MongoDBMemoryConfig {
   uri: string;
@@ -15,6 +16,7 @@ export interface MongoDBMemoryConfig {
   socketTimeoutMS?: number;
   connectTimeoutMS?: number;
   operationTimeoutMS?: number; // Timeout for database operations
+  threadTTLSeconds?: number; // TTL for thread documents (in seconds). Orphaned messages are periodically cleaned up.
 }
 
 export class MongoDBMemory implements IMemory {
@@ -28,6 +30,8 @@ export class MongoDBMemory implements IMemory {
   private connectionConfig: mongoose.ConnectOptions;
   private eventListenersSetup: boolean = false;
   private operationTimeoutMS: number;
+  private threadTTLSeconds?: number;
+  private orphanCleanupTimer?: ReturnType<typeof setInterval>;
 
   private agentMemory: MongoDBAgent;
   private intentMemory: MongoDBIntent;
@@ -41,6 +45,9 @@ export class MongoDBMemory implements IMemory {
     this.maxReconnectAttempts = cfg.maxReconnectAttempts ?? 5;
     this.reconnectInterval = cfg.reconnectInterval ?? 5000;
     this.operationTimeoutMS = cfg.operationTimeoutMS ?? 10000; // Default 10 seconds
+    if (cfg.threadTTLSeconds !== undefined && cfg.threadTTLSeconds > 0) {
+      this.threadTTLSeconds = cfg.threadTTLSeconds;
+    }
     this.connectionConfig = {
       maxPoolSize: cfg.maxPoolSize ?? 1,
       serverSelectionTimeoutMS: cfg.serverSelectionTimeoutMS ?? 30000,
@@ -179,6 +186,8 @@ export class MongoDBMemory implements IMemory {
       await mongoose.connect(this.uri, this.connectionConfig);
       this.connected = true;
       this.reconnectAttempts = 0;
+      await this.setupTTLIndex();
+      this.startOrphanCleanup();
     } catch (error) {
       loggers.agent.error("Failed to connect to MongoDB:", error);
       throw error;
@@ -191,6 +200,10 @@ export class MongoDBMemory implements IMemory {
     }
 
     try {
+      if (this.orphanCleanupTimer) {
+        clearInterval(this.orphanCleanupTimer);
+        this.orphanCleanupTimer = undefined;
+      }
       await mongoose.disconnect();
       this.connected = false;
     } catch (error) {
@@ -217,6 +230,74 @@ export class MongoDBMemory implements IMemory {
 
     if (!this.isConnected) {
       throw new Error("MongoDB is not connected and reconnection failed");
+    }
+  }
+
+  private async setupTTLIndex(): Promise<void> {
+    if (this.threadTTLSeconds === undefined) return;
+
+    try {
+      const db = mongoose.connection.db;
+      if (!db) return;
+
+      const collection = db.collection('threads');
+      const indexes = await collection.indexes();
+      const existingTTL = indexes.find(
+        (idx) => idx.key?.updatedAt !== undefined && idx.expireAfterSeconds !== undefined
+      );
+
+      if (existingTTL) {
+        if (existingTTL.expireAfterSeconds !== this.threadTTLSeconds) {
+          await db.command({
+            collMod: 'threads',
+            index: { keyPattern: { updatedAt: 1 }, expireAfterSeconds: this.threadTTLSeconds },
+          });
+          loggers.agent.info(`Thread TTL index updated to ${this.threadTTLSeconds} seconds`);
+        }
+      } else {
+        await collection.createIndex(
+          { updatedAt: 1 },
+          { expireAfterSeconds: this.threadTTLSeconds },
+        );
+        loggers.agent.info(`Thread TTL index created with ${this.threadTTLSeconds} seconds`);
+      }
+    } catch (error) {
+      loggers.agent.error('Failed to setup TTL index:', error);
+    }
+  }
+
+  private startOrphanCleanup(): void {
+    if (this.threadTTLSeconds === undefined) return;
+    if (this.orphanCleanupTimer) return;
+
+    // Run cleanup at half the TTL interval, with a minimum of 60s and maximum of 1 hour
+    const intervalMs = Math.max(60_000, Math.min(this.threadTTLSeconds * 500, 3_600_000));
+    this.orphanCleanupTimer = setInterval(() => {
+      this.cleanupOrphanedMessages().catch((error) => {
+        loggers.agent.error('Orphaned message cleanup failed:', error);
+      });
+    }, intervalMs);
+
+    loggers.agent.info(`Orphaned message cleanup scheduled every ${Math.round(intervalMs / 1000)}s`);
+  }
+
+  private async cleanupOrphanedMessages(): Promise<void> {
+    if (!this.connected) return;
+
+    try {
+      const db = mongoose.connection.db;
+      if (!db) return;
+
+      const existingThreadIds = await db.collection('threads').distinct('threadId');
+      const result = await MessageModel.deleteMany({
+        threadId: { $nin: existingThreadIds },
+      });
+
+      if (result.deletedCount > 0) {
+        loggers.agent.info(`Cleaned up ${result.deletedCount} orphaned messages`);
+      }
+    } catch (error) {
+      loggers.agent.error('Failed to cleanup orphaned messages:', error);
     }
   }
 

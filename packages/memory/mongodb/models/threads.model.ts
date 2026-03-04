@@ -23,14 +23,14 @@ export const ThreadObjectSchema = new Schema(
 			type: String,
 			required: false,
 		},
-		created_at: {
-			type: Number,
-			required: true,
+		isPinned: {
+			type: Boolean,
+			required: false,
+			default: false,
 		},
-		updated_at: {
-			type: Number,
-			required: true,
-		}
+	},
+	{
+		timestamps: true,
 	},
 );
 
@@ -39,8 +39,9 @@ export interface ThreadDocument extends Document {
 	threadId: string;
 	userId: string;
 	title: string;
-	created_at: number;
-	updated_at: number;
+	isPinned: boolean;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 export const ThreadModel = mongoose.model<ThreadDocument>("Thread", ThreadObjectSchema);

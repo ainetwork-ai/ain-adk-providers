@@ -23,6 +23,11 @@ export const ThreadObjectSchema = new Schema(
 			type: String,
 			required: false,
 		},
+		isPinned: {
+			type: Boolean,
+			required: false,
+			default: false,
+		},
 	},
 	{
 		timestamps: true,
@@ -34,6 +39,7 @@ export interface ThreadDocument extends Document {
 	threadId: string;
 	userId: string;
 	title: string;
+	isPinned: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }

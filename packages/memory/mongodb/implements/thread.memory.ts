@@ -44,6 +44,7 @@ export class MongoDBThread implements IThreadMemory {
         userId: thread.userId,
         type: thread.type as ThreadType,
         title: thread.title || "New thread",
+        isPinned: thread.isPinned ?? false,
         messages: []
       };
       messages.forEach((message: MessageDocument) => {
@@ -123,10 +124,25 @@ export class MongoDBThread implements IThreadMemory {
           userId,
           threadId: thread.threadId,
           title: thread.title,
+          isPinned: thread.isPinned ?? false,
           updatedAt: thread.updatedAt,
         } as ThreadMetadata;
       })
       return data;
     }, `listThreads(${userId})`);
+  };
+
+  public async updateThreadPin(
+    userId: string,
+    threadId: string,
+    isPinned: boolean
+  ): Promise<void> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      await ThreadModel.updateOne(
+        { threadId, userId },
+        { $set: { isPinned } }
+      ).maxTimeMS(timeout);
+    }, `updateThreadPin(${userId}, ${threadId})`);
   };
 }

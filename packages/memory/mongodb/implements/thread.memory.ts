@@ -67,14 +67,11 @@ export class MongoDBThread implements IThreadMemory {
     title: string,
   ): Promise<ThreadObject> {
     return this.executeWithRetry(async () => {
-      const now = Date.now();
       await ThreadModel.create({
         type,
         userId,
         threadId,
         title,
-        updated_at: now,
-        created_at: now,
       });
 
       return { type, userId, threadId, title, messages: []};
@@ -87,9 +84,7 @@ export class MongoDBThread implements IThreadMemory {
     messages: MessageObject[]
   ): Promise<void> {
     return this.executeWithRetry(async () => {
-      await ThreadModel.updateOne({ threadId, userId }, {
-        updated_at: Date.now(),
-      });
+      await ThreadModel.updateOne({ threadId, userId }, { $set: {} });
       for (const message of messages) {
         await MessageModel.create({
           threadId,
@@ -120,7 +115,7 @@ export class MongoDBThread implements IThreadMemory {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
       const threads = await ThreadModel.find({ userId })
-        .sort({ updated_at: -1 })
+        .sort({ updatedAt: -1 })
         .maxTimeMS(timeout);
       const data: ThreadMetadata[] = threads.map((thread: ThreadDocument) => {
         return {
@@ -128,7 +123,7 @@ export class MongoDBThread implements IThreadMemory {
           userId,
           threadId: thread.threadId,
           title: thread.title,
-          updatedAt: thread.updated_at
+          updatedAt: thread.updatedAt,
         } as ThreadMetadata;
       })
       return data;

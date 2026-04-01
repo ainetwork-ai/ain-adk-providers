@@ -1,6 +1,7 @@
-import { IAgentMemory, IIntentMemory, IMemory, IThreadMemory, IWorkflowMemory } from "@ainetwork/adk/modules";
+import { IAgentMemory, IIntentMemory, IMemory, IScheduledJobMemory, IThreadMemory, IWorkflowMemory } from "@ainetwork/adk/modules";
 import { InMemoryAgent } from "./agent.memory";
 import { InMemoryIntent } from "./intent.memory";
+import { InMemoryScheduledJob } from "./scheduled-job.memory";
 import { InMemoryThread } from "./thread.memory";
 import { InMemoryWorkflow } from "./workflow.memory";
 
@@ -12,6 +13,7 @@ export class InMemoryMemory implements IMemory {
   private intentMemory: InMemoryIntent;
   private threadMemory: InMemoryThread;
   private workflowMemory: InMemoryWorkflow;
+  private scheduledJobMemory: InMemoryScheduledJob;
 
   constructor() {
     if (!InMemoryMemory.instance) {
@@ -22,6 +24,7 @@ export class InMemoryMemory implements IMemory {
     this.threadMemory = new InMemoryThread();
     this.intentMemory = new InMemoryIntent();
     this.workflowMemory = new InMemoryWorkflow();
+    this.scheduledJobMemory = new InMemoryScheduledJob();
   }
 
   public async connect(): Promise<void> {
@@ -50,5 +53,9 @@ export class InMemoryMemory implements IMemory {
 
   public getWorkflowMemory(): IWorkflowMemory {
     return this.workflowMemory;
+  }
+
+  public getScheduledJobMemory(): IScheduledJobMemory {
+    return this.scheduledJobMemory;
   }
 }

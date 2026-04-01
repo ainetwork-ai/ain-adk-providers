@@ -1,10 +1,11 @@
-import type { MessageObject, ThreadObject, ThreadMetadata, ThreadType } from "@ainetwork/adk/types/memory";
+import type { MessageObject, ThreadObject, ThreadMetadata, ThreadType, ThreadFilter } from "@ainetwork/adk/types/memory";
 import { IThreadMemory } from "@ainetwork/adk/modules";
 
 type InMemoryThreadObject = {
   type: ThreadType;
   title: string;
   isPinned: boolean;
+  jobId?: string;
   messages: Array<MessageObject>;
 }
 
@@ -14,6 +15,7 @@ type InMemoryThreadMetadata = {
   threadId: string;
   title: string;
   isPinned: boolean;
+  jobId?: string;
   updatedAt: number;
   createdAt: number;
 }
@@ -39,6 +41,7 @@ export class InMemoryThread implements IThreadMemory {
         type: res.type,
         title: res.title,
         isPinned: res.isPinned,
+        jobId: res.jobId,
         messages: res.messages,
       };
       return threadObject;
@@ -50,7 +53,8 @@ export class InMemoryThread implements IThreadMemory {
     type: ThreadType,
     userId: string,
     threadId: string,
-    title: string
+    title: string,
+    jobId?: string,
   ): Promise<ThreadObject> {
     const now = Date.now();
     const key = this.generateKey(userId, threadId);
@@ -58,14 +62,14 @@ export class InMemoryThread implements IThreadMemory {
       this.userThreadIndex.set(userId, new Set());
     }
     if (!this.threads.has(key)) {
-      this.threads.set(key, { type, title, isPinned: false, messages: [] });
+      this.threads.set(key, { type, title, isPinned: false, jobId, messages: [] });
       const metadata: InMemoryThreadMetadata = {
-        type, userId, threadId, title, isPinned: false, createdAt: now, updatedAt: now,
+        type, userId, threadId, title, isPinned: false, jobId, createdAt: now, updatedAt: now,
       }
       this.userThreadIndex.get(userId)?.add(metadata);
     }
 
-    return { type, title, threadId, userId, messages: [] };
+    return { type, title, threadId, userId, jobId, messages: [] };
   }
 
   public async addMessagesToThread(
@@ -96,12 +100,18 @@ export class InMemoryThread implements IThreadMemory {
     }
   }
 
-  public async listThreads(userId: string): Promise<ThreadMetadata[]> {
+  public async listThreads(userId: string, filter?: ThreadFilter): Promise<ThreadMetadata[]> {
     const threads = this.userThreadIndex.get(userId);
-    if (threads) {
-      return Array.from(threads);
+    if (!threads) return [];
+
+    let result = Array.from(threads);
+    if (filter?.jobId) {
+      result = result.filter(t => t.jobId === filter.jobId);
     }
-    return [];
+    if (filter?.type) {
+      result = result.filter(t => t.type === filter.type);
+    }
+    return result;
   }
 
   public async updateThreadPin(

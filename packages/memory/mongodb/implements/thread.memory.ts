@@ -132,7 +132,8 @@ export class MongoDBThread implements IThreadMemory {
           title: thread.title,
           isPinned: thread.isPinned ?? false,
           workflowId: thread.workflowId,
-          updatedAt: thread.updatedAt,
+          createdAt: thread.createdAt?.toISOString(),
+          updatedAt: thread.updatedAt?.toISOString(),
         } as ThreadMetadata;
       })
       return data;

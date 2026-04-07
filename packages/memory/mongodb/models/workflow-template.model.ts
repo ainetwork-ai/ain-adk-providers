@@ -45,8 +45,9 @@ export interface WorkflowTemplateDocument extends Document {
 		{
 			id: string;
 			label: string;
-			type: "select" | "date_range" | "text" | "number";
+			type: "select" | "date_range" | "date_parts" | "text" | "number";
 			options?: Array<string>;
+			resolveAt?: "creation" | "execution";
 		}
 	>;
 }

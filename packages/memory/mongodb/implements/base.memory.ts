@@ -1,11 +1,11 @@
-import { IAgentMemory, IIntentMemory, IMemory, IScheduledJobMemory, IThreadMemory, IWorkflowMemory } from "@ainetwork/adk/modules";
+import { IAgentMemory, IIntentMemory, IMemory, IUserWorkflowMemory, IThreadMemory, IWorkflowTemplateMemory } from "@ainetwork/adk/modules";
 import mongoose from "mongoose";
 import { loggers } from "@ainetwork/adk/utils/logger";
 import { MongoDBAgent } from "./agent.memory";
 import { MongoDBIntent } from "./intent.memory";
-import { MongoDBScheduledJob } from "./scheduled-job.memory";
 import { MongoDBThread } from "./thread.memory";
-import { MongoDBWorkflow } from "./workflow.memory";
+import { MongoDBUserWorkflow } from "./user-workflow.memory";
+import { MongoDBWorkflowTemplate } from "./workflow-template.memory";
 import { MessageModel } from "../models/messages.model";
 
 export interface MongoDBMemoryConfig {
@@ -37,8 +37,8 @@ export class MongoDBMemory implements IMemory {
   private agentMemory: MongoDBAgent;
   private intentMemory: MongoDBIntent;
   private threadMemory: MongoDBThread;
-  private workflowMemory: MongoDBWorkflow;
-  private scheduledJobMemory: MongoDBScheduledJob;
+  private workflowTemplateMemory: MongoDBWorkflowTemplate;
+  private userWorkflowMemory: MongoDBUserWorkflow;
 
   constructor(config: string | MongoDBMemoryConfig) {
     const cfg = typeof config === 'string' ? { uri: config } : config;
@@ -82,12 +82,12 @@ export class MongoDBMemory implements IMemory {
 			this.getOperationTimeout.bind(this)
 		);
 
-		this.workflowMemory = new MongoDBWorkflow(
+		this.workflowTemplateMemory = new MongoDBWorkflowTemplate(
 			this.executeWithRetry.bind(this),
 			this.getOperationTimeout.bind(this)
 		);
 
-		this.scheduledJobMemory = new MongoDBScheduledJob(
+		this.userWorkflowMemory = new MongoDBUserWorkflow(
 			this.executeWithRetry.bind(this),
 			this.getOperationTimeout.bind(this)
 		);
@@ -105,12 +105,12 @@ export class MongoDBMemory implements IMemory {
     return this.intentMemory;
   }
 
-  public getWorkflowMemory(): IWorkflowMemory {
-    return this.workflowMemory;
+  public getWorkflowTemplateMemory(): IWorkflowTemplateMemory {
+    return this.workflowTemplateMemory;
   }
 
-  public getScheduledJobMemory(): IScheduledJobMemory {
-    return this.scheduledJobMemory;
+  public getUserWorkflowMemory(): IUserWorkflowMemory {
+    return this.userWorkflowMemory;
   }
 
   private setupMongooseEventListeners(): void {

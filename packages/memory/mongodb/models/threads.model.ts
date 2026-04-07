@@ -28,7 +28,7 @@ export const ThreadObjectSchema = new Schema(
 			required: false,
 			default: false,
 		},
-		jobId: {
+		workflowId: {
 			type: String,
 			required: false,
 			index: true,
@@ -45,7 +45,7 @@ export interface ThreadDocument extends Document {
 	userId: string;
 	title: string;
 	isPinned: boolean;
-	jobId?: string;
+	workflowId?: string;
 	createdAt: Date;
 	updatedAt: Date;
 }

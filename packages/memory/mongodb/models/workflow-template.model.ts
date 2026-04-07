@@ -1,15 +1,12 @@
 import { type Document, Schema } from "mongoose";
 import mongoose from "mongoose";
 
-export const WorkflowObjectSchema = new Schema(
+export const WorkflowTemplateObjectSchema = new Schema(
 	{
-		workflowId: {
+		templateId: {
 			type: String,
 			required: true,
 			unique: true,
-		},
-		userId: {
-			type: String,
 		},
 		title: {
 			type: String,
@@ -37,9 +34,8 @@ export const WorkflowObjectSchema = new Schema(
 	}
 );
 
-export interface WorkflowDocument extends Document {
-	workflowId: string;
-	userId?: string;
+export interface WorkflowTemplateDocument extends Document {
+	templateId: string;
 	title: string;
 	description: string;
 	active: boolean;
@@ -55,4 +51,7 @@ export interface WorkflowDocument extends Document {
 	>;
 }
 
-export const WorkflowModel = mongoose.model<WorkflowDocument>("Workflow", WorkflowObjectSchema);
+export const WorkflowTemplateModel = mongoose.model<WorkflowTemplateDocument>(
+	"WorkflowTemplate",
+	WorkflowTemplateObjectSchema
+);

@@ -45,7 +45,7 @@ export class MongoDBThread implements IThreadMemory {
         type: thread.type as ThreadType,
         title: thread.title || "New thread",
         isPinned: thread.isPinned ?? false,
-        jobId: thread.jobId,
+        workflowId: thread.workflowId,
         messages: []
       };
       messages.forEach((message: MessageDocument) => {
@@ -67,7 +67,7 @@ export class MongoDBThread implements IThreadMemory {
     userId: string,
     threadId: string,
     title: string,
-    jobId?: string,
+    workflowId?: string,
   ): Promise<ThreadObject> {
     return this.executeWithRetry(async () => {
       await ThreadModel.create({
@@ -75,10 +75,10 @@ export class MongoDBThread implements IThreadMemory {
         userId,
         threadId,
         title,
-        jobId,
+        workflowId,
       });
 
-      return { type, userId, threadId, title, jobId, messages: []};
+      return { type, userId, threadId, title, workflowId, messages: []};
     }, `createThread(${userId}, ${threadId})`);
   };
 
@@ -119,7 +119,7 @@ export class MongoDBThread implements IThreadMemory {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
       const query: Record<string, any> = { userId };
-      if (filter?.jobId) query.jobId = filter.jobId;
+      if (filter?.workflowId) query.workflowId = filter.workflowId;
       if (filter?.type) query.type = filter.type;
       const threads = await ThreadModel.find(query)
         .sort({ updatedAt: -1 })
@@ -131,7 +131,7 @@ export class MongoDBThread implements IThreadMemory {
           threadId: thread.threadId,
           title: thread.title,
           isPinned: thread.isPinned ?? false,
-          jobId: thread.jobId,
+          workflowId: thread.workflowId,
           updatedAt: thread.updatedAt,
         } as ThreadMetadata;
       })

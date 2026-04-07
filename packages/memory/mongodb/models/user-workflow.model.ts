@@ -1,9 +1,9 @@
 import { type Document, Schema } from "mongoose";
 import mongoose from "mongoose";
 
-export const ScheduledJobObjectSchema = new Schema(
+export const UserWorkflowObjectSchema = new Schema(
 	{
-		jobId: {
+		workflowId: {
 			type: String,
 			required: true,
 			unique: true,
@@ -25,18 +25,21 @@ export const ScheduledJobObjectSchema = new Schema(
 			required: true,
 			default: false,
 		},
-		query: {
+		templateId: {
 			type: String,
 		},
-		workflowId: {
+		content: {
 			type: String,
+			required: true,
 		},
-		workflowVariables: {
+		variables: {
+			type: Schema.Types.Mixed,
+		},
+		variableValues: {
 			type: Schema.Types.Mixed,
 		},
 		schedule: {
 			type: String,
-			required: true,
 		},
 		timezone: {
 			type: String,
@@ -56,23 +59,32 @@ export const ScheduledJobObjectSchema = new Schema(
 	}
 );
 
-export interface ScheduledJobDocument extends Document {
-	jobId: string;
+export interface UserWorkflowDocument extends Document {
+	workflowId: string;
 	userId: string;
 	title: string;
 	description?: string;
 	active: boolean;
-	query?: string;
-	workflowId?: string;
-	workflowVariables?: Record<string, string>;
-	schedule: string;
+	templateId?: string;
+	content: string;
+	variables?: Record<
+		string,
+		{
+			id: string;
+			label: string;
+			type: "select" | "date_range" | "text" | "number";
+			options?: Array<string>;
+		}
+	>;
+	variableValues?: Record<string, string>;
+	schedule?: string;
 	timezone?: string;
 	lastRunAt?: number;
 	nextRunAt?: number;
 	lastThreadId?: string;
 }
 
-export const ScheduledJobModel = mongoose.model<ScheduledJobDocument>(
-	"ScheduledJob",
-	ScheduledJobObjectSchema
+export const UserWorkflowModel = mongoose.model<UserWorkflowDocument>(
+	"UserWorkflow",
+	UserWorkflowObjectSchema
 );

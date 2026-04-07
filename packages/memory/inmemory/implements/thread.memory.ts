@@ -5,7 +5,7 @@ type InMemoryThreadObject = {
   type: ThreadType;
   title: string;
   isPinned: boolean;
-  jobId?: string;
+  workflowId?: string;
   messages: Array<MessageObject>;
 }
 
@@ -15,7 +15,7 @@ type InMemoryThreadMetadata = {
   threadId: string;
   title: string;
   isPinned: boolean;
-  jobId?: string;
+  workflowId?: string;
   updatedAt: number;
   createdAt: number;
 }
@@ -41,7 +41,7 @@ export class InMemoryThread implements IThreadMemory {
         type: res.type,
         title: res.title,
         isPinned: res.isPinned,
-        jobId: res.jobId,
+        workflowId: res.workflowId,
         messages: res.messages,
       };
       return threadObject;
@@ -54,7 +54,7 @@ export class InMemoryThread implements IThreadMemory {
     userId: string,
     threadId: string,
     title: string,
-    jobId?: string,
+    workflowId?: string,
   ): Promise<ThreadObject> {
     const now = Date.now();
     const key = this.generateKey(userId, threadId);
@@ -62,14 +62,14 @@ export class InMemoryThread implements IThreadMemory {
       this.userThreadIndex.set(userId, new Set());
     }
     if (!this.threads.has(key)) {
-      this.threads.set(key, { type, title, isPinned: false, jobId, messages: [] });
+      this.threads.set(key, { type, title, isPinned: false, workflowId, messages: [] });
       const metadata: InMemoryThreadMetadata = {
-        type, userId, threadId, title, isPinned: false, jobId, createdAt: now, updatedAt: now,
+        type, userId, threadId, title, isPinned: false, workflowId, createdAt: now, updatedAt: now,
       }
       this.userThreadIndex.get(userId)?.add(metadata);
     }
 
-    return { type, title, threadId, userId, jobId, messages: [] };
+    return { type, title, threadId, userId, workflowId, messages: [] };
   }
 
   public async addMessagesToThread(
@@ -105,8 +105,8 @@ export class InMemoryThread implements IThreadMemory {
     if (!threads) return [];
 
     let result = Array.from(threads);
-    if (filter?.jobId) {
-      result = result.filter(t => t.jobId === filter.jobId);
+    if (filter?.workflowId) {
+      result = result.filter(t => t.workflowId === filter.workflowId);
     }
     if (filter?.type) {
       result = result.filter(t => t.type === filter.type);

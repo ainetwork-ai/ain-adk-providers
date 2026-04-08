@@ -39,11 +39,17 @@ export class MongoDBUserWorkflow implements IUserWorkflowMemory {
   }
 
   public async updateUserWorkflow(workflowId: string, updates: Partial<UserWorkflow>): Promise<void> {
+    if (!updates.userId) {
+      throw new Error("userId is required for updateUserWorkflow");
+    }
+
+    const { userId, workflowId: _workflowId, ...mutableUpdates } = updates;
+
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
       await UserWorkflowModel.updateOne(
-        { workflowId },
-        { $set: updates }
+        { workflowId, userId },
+        { $set: mutableUpdates }
       ).maxTimeMS(timeout);
     }, "updateUserWorkflow()");
   }

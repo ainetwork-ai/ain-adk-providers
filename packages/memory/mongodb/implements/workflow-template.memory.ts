@@ -39,11 +39,13 @@ export class MongoDBWorkflowTemplate implements IWorkflowTemplateMemory {
   }
 
   public async updateTemplate(templateId: string, updates: Partial<WorkflowTemplate>): Promise<void> {
+    const { templateId: _templateId, ...mutableUpdates } = updates;
+
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
       await WorkflowTemplateModel.updateOne(
         { templateId },
-        { $set: updates }
+        { $set: mutableUpdates }
       ).maxTimeMS(timeout);
     }, "updateTemplate()");
   }

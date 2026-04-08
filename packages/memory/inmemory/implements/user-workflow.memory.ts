@@ -21,9 +21,17 @@ export class InMemoryUserWorkflow implements IUserWorkflowMemory {
   }
 
   public async updateUserWorkflow(workflowId: string, updates: Partial<UserWorkflow>): Promise<void> {
+    if (!updates.userId) {
+      throw new Error("userId is required for updateUserWorkflow");
+    }
+
     const existing = this.workflows.get(workflowId);
     if (!existing) {
       throw new Error(`UserWorkflow not found: ${workflowId}`);
+    }
+
+    if (existing.userId !== updates.userId) {
+      throw new Error("Unauthorized: userId does not match workflow owner");
     }
 
     const updated = { ...existing, ...updates, workflowId };

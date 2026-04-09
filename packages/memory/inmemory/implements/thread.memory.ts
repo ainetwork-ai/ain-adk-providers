@@ -16,8 +16,8 @@ type InMemoryThreadMetadata = {
   title: string;
   isPinned: boolean;
   workflowId?: string;
-  updatedAt: number;
-  createdAt: number;
+  updatedAt: string;
+  createdAt: string;
 }
 
 export class InMemoryThread implements IThreadMemory {
@@ -64,7 +64,7 @@ export class InMemoryThread implements IThreadMemory {
     if (!this.threads.has(key)) {
       this.threads.set(key, { type, title, isPinned: false, workflowId, messages: [] });
       const metadata: InMemoryThreadMetadata = {
-        type, userId, threadId, title, isPinned: false, workflowId, createdAt: now, updatedAt: now,
+        type, userId, threadId, title, isPinned: false, workflowId, createdAt: new Date(now).toISOString(), updatedAt: new Date(now).toISOString(),
       }
       this.userThreadIndex.get(userId)?.add(metadata);
     }

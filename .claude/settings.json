@@ -3,7 +3,8 @@
     "allow": [
       "Read(//Users/shyun/comcom/ain-agent/ain-adk/src/types/**)",
       "Read(//Users/shyun/comcom/ain-agent/ain-adk/src/**)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(find /Users/shyun/comcom/ain-agent/ain-adk-providers/packages/auth -name \"*.ts\" -path \"*/implements/*\" -exec basename {} \\\\;)"
     ]
   }
 }

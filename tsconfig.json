@@ -12,7 +12,6 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"skipLibCheck": true,
-		"baseUrl": ".",
 		"allowSyntheticDefaultImports": true,
 	},
 	"ts-node": {

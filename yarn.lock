@@ -9,10 +9,10 @@
   dependencies:
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.4.1":
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.4.1.tgz#ce888e7a557868753c92147bc265622f21033ba3"
-  integrity sha512-dmwZ7ofoDOdQRFBkQIOk6qoEK/ZAVol4j5EWFDOr09ytWL5f3v2tD7pJqwSrwwL9fKSIblHIRu+przyxsO12RA==
+"@ainetwork/adk@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.5.0.tgz#dbf058155b0255496a519b883ebdd8cb6ba327fe"
+  integrity sha512-lA3c2lvQ7GfN2LN72XPzGaW9czg3MuDS8Ls8Ar2IN67EJqzam9Um/Oy2qUUtCCWsNThLxRjgdMTaBnI8QN81hw==
   dependencies:
     "@a2a-js/sdk" "^0.3.7"
     "@modelcontextprotocol/sdk" "^1.25.1"
@@ -20,6 +20,7 @@
     dotenv "^16.5.0"
     express "^5.1.0"
     http-status-codes "^2.3.0"
+    node-cron "^4.2.1"
     uuid "^11.1.0"
     winston "^3.17.0"
     winston-daily-rotate-file "^5.0.0"
@@ -4095,6 +4096,11 @@ neo-async@^2.6.2:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.6.2.tgz#b4aafb93e3aeb2d8174ca53cf163ab7d7308305f"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
+
+node-cron@^4.2.1:
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/node-cron/-/node-cron-4.2.1.tgz#6979be4aee4702f06322d21220df8de252c8e265"
+  integrity sha512-lgimEHPE/QDgFlywTd8yTR61ptugX3Qer29efeyWw2rv259HtGBNn1vZVmp8lB9uo9wC0t/AT4iGqXxia+CJFg==
 
 node-fetch@2.6.7:
   version "2.6.7"

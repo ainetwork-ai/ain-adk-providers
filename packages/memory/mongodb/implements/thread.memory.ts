@@ -1,4 +1,4 @@
-import type { MessageObject, ThreadMetadata, ThreadObject, ThreadType } from "@ainetwork/adk/types/memory";
+import type { MessageObject, ThreadMetadata, ThreadObject, ThreadType, ThreadFilter } from "@ainetwork/adk/types/memory";
 import { MessageRole } from "@ainetwork/adk/types/memory";
 import { IThreadMemory } from "@ainetwork/adk/modules";
 import { ThreadDocument, ThreadModel } from "../models/threads.model";
@@ -45,6 +45,7 @@ export class MongoDBThread implements IThreadMemory {
         type: thread.type as ThreadType,
         title: thread.title || "New thread",
         isPinned: thread.isPinned ?? false,
+        workflowId: thread.workflowId,
         messages: []
       };
       messages.forEach((message: MessageDocument) => {
@@ -66,6 +67,7 @@ export class MongoDBThread implements IThreadMemory {
     userId: string,
     threadId: string,
     title: string,
+    workflowId?: string,
   ): Promise<ThreadObject> {
     return this.executeWithRetry(async () => {
       await ThreadModel.create({
@@ -73,9 +75,10 @@ export class MongoDBThread implements IThreadMemory {
         userId,
         threadId,
         title,
+        workflowId,
       });
 
-      return { type, userId, threadId, title, messages: []};
+      return { type, userId, threadId, title, workflowId, messages: []};
     }, `createThread(${userId}, ${threadId})`);
   };
 
@@ -112,10 +115,13 @@ export class MongoDBThread implements IThreadMemory {
     }, `deleteThread(${userId}, ${threadId})`);
   };
 
-  public async listThreads(userId: string): Promise<ThreadMetadata[]> {
+  public async listThreads(userId: string, filter?: ThreadFilter): Promise<ThreadMetadata[]> {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
-      const threads = await ThreadModel.find({ userId })
+      const query: Record<string, any> = { userId };
+      if (filter?.workflowId) query.workflowId = filter.workflowId;
+      if (filter?.type) query.type = filter.type;
+      const threads = await ThreadModel.find(query)
         .sort({ updatedAt: -1 })
         .maxTimeMS(timeout);
       const data: ThreadMetadata[] = threads.map((thread: ThreadDocument) => {
@@ -125,7 +131,9 @@ export class MongoDBThread implements IThreadMemory {
           threadId: thread.threadId,
           title: thread.title,
           isPinned: thread.isPinned ?? false,
-          updatedAt: thread.updatedAt,
+          workflowId: thread.workflowId,
+          createdAt: thread.createdAt?.toISOString(),
+          updatedAt: thread.updatedAt?.toISOString(),
         } as ThreadMetadata;
       })
       return data;

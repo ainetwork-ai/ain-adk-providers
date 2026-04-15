@@ -52,6 +52,8 @@ export const MessageObjectSchema = new Schema(
 	},
 );
 
+MessageObjectSchema.index({ threadId: 1, messageId: 1 }, { unique: true });
+
 // Message Document interface
 export interface MessageDocument extends Document {
 	messageId: string;

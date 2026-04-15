@@ -88,20 +88,25 @@ export class MongoDBThread implements IThreadMemory {
     messages: MessageObject[]
   ): Promise<void> {
     return this.executeWithRetry(async () => {
-      const docs = messages.map((message) => ({
-        threadId,
-        messageId: message.messageId,
-        userId,
-        role: message.role,
-        content: message.content,
-        timestamp: message.timestamp,
-        metadata: message.metadata,
-      }));
-
-      await Promise.all([
-        ThreadModel.updateOne({ threadId, userId }, { $set: {} }),
-        docs.length > 0 ? MessageModel.insertMany(docs, { ordered: false }) : Promise.resolve(),
-      ]);
+      if (messages.length > 0) {
+        const messageIds = messages.map((m) => m.messageId);
+        await MessageModel.deleteMany({ threadId, userId, messageId: { $in: messageIds } });
+        await MessageModel.insertMany(
+          messages.map((message) => ({
+            threadId,
+            messageId: message.messageId,
+            userId,
+            role: message.role,
+            content: message.content,
+            timestamp: message.timestamp,
+            metadata: message.metadata,
+          }))
+        );
+      }
+      await ThreadModel.updateOne(
+        { threadId, userId },
+        { $set: { updatedAt: new Date() } }
+      );
     }, `addMessagesToThread(${userId}, ${threadId})`);
   };
 

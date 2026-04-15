@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/memory/*",
     "packages/models/*",
-    "packages/auth/*"
+    "packages/auth/*",
+    "examples/*"
   ],
   "scripts": {
     "build": "lerna run build",
@@ -13,9 +14,10 @@
     "publish:lerna": "lerna run build && lerna publish --no-private",
     "lint": "npx @biomejs/biome check",
     "lint:write": "npx @biomejs/biome check --write",
-    "update:adk": "lerna exec --concurrency 1 -- yarn add @ainetwork/adk"
+    "update:adk": "yarn add -W -D @ainetwork/adk"
   },
   "devDependencies": {
+    "@ainetwork/adk": "^0.5.1",
     "lerna": "^8.2.3",
     "tsup": "^8.2.3",
     "typescript": "^5.0.0"

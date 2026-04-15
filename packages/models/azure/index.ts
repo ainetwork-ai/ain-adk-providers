@@ -112,7 +112,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 				model: this.modelName,
 				messages,
 				tools: functions,
-				tool_choice: functions.length > 0 ? "auto" : "none",
+				tool_choice: options?.toolChoice ?? "auto",
 				reasoning_effort: options?.reasoning,
 				verbosity: options?.verbosity,
 			});
@@ -147,7 +147,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			model: this.modelName,
 			messages,
 			tools: functions,
-			tool_choice: functions.length > 0 ? "auto" : "none",
+			tool_choice: functions.length > 0 ? (options?.toolChoice ?? "auto") : "none",
 			stream: true,
 			reasoning_effort: options?.reasoning,
 			verbosity: options?.verbosity,

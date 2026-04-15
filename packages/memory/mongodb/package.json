@@ -28,8 +28,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ainetwork/adk": "^0.5.0",
     "mongoose": "^8.16.5"
+  },
+  "peerDependencies": {
+    "@ainetwork/adk": "^0.5.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

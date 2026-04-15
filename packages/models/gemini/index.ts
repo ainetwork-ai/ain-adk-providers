@@ -14,6 +14,7 @@ import {
 	type Content,
 	type FunctionCall,
 	type FunctionDeclaration,
+	FunctionCallingConfigMode,
 	type GenerateContentResponse,
 	GoogleGenAI,
 	Model,
@@ -85,11 +86,17 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
 		if (functions.length > 0) {
+			const toolChoiceMode = options?.toolChoice === "required"
+				? FunctionCallingConfigMode.ANY
+				: FunctionCallingConfigMode.AUTO;
 			const response = await this.client.models.generateContent({
 				model: this.modelName,
 				contents: messages,
 				config: {
 					tools: [{ functionDeclarations: functions }],
+					toolConfig: {
+						functionCallingConfig: { mode: toolChoiceMode },
+					},
 				},
 			});
 
@@ -121,10 +128,18 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		functions: FunctionDeclaration[],
 		options?: ModelFetchOptions,
 	): Promise<LLMStream> {
+		const toolChoiceMode = options?.toolChoice === "required"
+			? FunctionCallingConfigMode.ANY
+			: FunctionCallingConfigMode.AUTO;
 		const stream = await this.client.models.generateContentStream({
 			model: this.modelName,
 			contents: messages,
-			config: { tools: [{ functionDeclarations: functions }] },
+			config: {
+				tools: [{ functionDeclarations: functions }],
+				toolConfig: {
+					functionCallingConfig: { mode: toolChoiceMode },
+				},
+			},
 		});
 
 		return this.createGeminiStreamAdapter(stream);

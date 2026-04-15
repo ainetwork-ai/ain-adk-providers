@@ -34,6 +34,11 @@ const IntentObjectSchema = new Schema(
 			type: [String],
 			required: false,
 		},
+		toolChoice: {
+			type: String,
+			enum: ["auto", "required"],
+			required: false,
+		},
 	},
 );
 

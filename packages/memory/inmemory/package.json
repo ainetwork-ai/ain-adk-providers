@@ -20,7 +20,7 @@
     "build": "tsup",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@ainetwork/adk": "^0.5.0"
   },
   "devDependencies": {

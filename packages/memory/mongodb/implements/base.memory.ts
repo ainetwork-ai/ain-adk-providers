@@ -51,7 +51,9 @@ export class MongoDBMemory implements IMemory {
       this.threadTTLSeconds = cfg.threadTTLSeconds;
     }
     this.connectionConfig = {
-      maxPoolSize: cfg.maxPoolSize ?? 1,
+      maxPoolSize: cfg.maxPoolSize ?? 10,
+      minPoolSize: 0,
+      maxIdleTimeMS: 30000,
       serverSelectionTimeoutMS: cfg.serverSelectionTimeoutMS ?? 30000,
       socketTimeoutMS: cfg.socketTimeoutMS ?? 45000,
       connectTimeoutMS: cfg.connectTimeoutMS ?? 30000,
@@ -152,7 +154,7 @@ export class MongoDBMemory implements IMemory {
 
     this.reconnecting = true;
 
-    while (this.reconnectAttempts < this.maxReconnectAttempts && !this.isConnected) {
+    while (this.reconnectAttempts < this.maxReconnectAttempts && !this.connected) {
       this.reconnectAttempts++;
       loggers.agent.info(
         `Attempting to reconnect to MongoDB (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
@@ -181,7 +183,7 @@ export class MongoDBMemory implements IMemory {
 
     this.reconnecting = false;
 
-    if (!this.isConnected) {
+    if (!this.connected) {
       loggers.agent.error(
         `Failed to reconnect to MongoDB after ${this.maxReconnectAttempts} attempts`
       );
@@ -206,7 +208,7 @@ export class MongoDBMemory implements IMemory {
   }
 
   public async disconnect(): Promise<void> {
-    if (!this.isConnected) {
+    if (!this.connected) {
       return;
     }
 
@@ -228,7 +230,7 @@ export class MongoDBMemory implements IMemory {
   }
 
   private async ensureConnection(): Promise<void> {
-    if (!this.isConnected && !this.reconnecting) {
+    if (!this.connected && !this.reconnecting) {
       await this.connect();
     }
 
@@ -239,7 +241,7 @@ export class MongoDBMemory implements IMemory {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    if (!this.isConnected) {
+    if (!this.connected) {
       throw new Error("MongoDB is not connected and reconnection failed");
     }
   }
@@ -336,6 +338,30 @@ export class MongoDBMemory implements IMemory {
       if (error.code === 50 || error.message?.includes("operation exceeded time limit")) {
         loggers.agent.error(`${operationName} exceeded time limit`);
         throw error;
+      }
+
+      // Check if it's a TooManyLogicalSessions error
+      if (error.code === 261 || error.codeName === "TooManyLogicalSessions") {
+        loggers.agent.warn(
+          `${operationName} failed due to too many sessions, disconnecting to release sessions...`
+        );
+
+        try {
+          await mongoose.disconnect();
+          this.connected = false;
+        } catch (disconnectError) {
+          loggers.agent.error("Failed to disconnect during session cleanup:", disconnectError);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await this.ensureConnection();
+
+        try {
+          return await operation();
+        } catch (retryError: any) {
+          loggers.agent.error(`${operationName} failed after session cleanup retry:`, retryError);
+          throw retryError;
+        }
       }
 
       // Check if it's a connection-related error

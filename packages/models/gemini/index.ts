@@ -57,7 +57,7 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 					// TODO: check message.content.type
 					return {
 						role: this.getMessageRole(message.role),
-						parts: [{ text: message.content.parts[0] }],
+						parts: [{ text: message.content.parts[0] as string }],
 					};
 				});
 		const userContent: Content = { role: "user", parts: [{ text: query }] };

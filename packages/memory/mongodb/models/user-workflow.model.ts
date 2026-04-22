@@ -1,3 +1,4 @@
+import type { WorkflowDefinition } from "@ainetwork/adk/types/memory";
 import { type Document, Schema } from "mongoose";
 import mongoose from "mongoose";
 
@@ -31,6 +32,9 @@ export const UserWorkflowObjectSchema = new Schema(
 		content: {
 			type: String,
 			required: true,
+		},
+		definition: {
+			type: Schema.Types.Mixed,
 		},
 		variables: {
 			type: Schema.Types.Mixed,
@@ -67,6 +71,7 @@ export interface UserWorkflowDocument extends Document {
 	active: boolean;
 	templateId?: string;
 	content: string;
+	definition?: WorkflowDefinition;
 	variables?: Record<
 		string,
 		{

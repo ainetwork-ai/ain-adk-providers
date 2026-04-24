@@ -1,4 +1,7 @@
-import type { WorkflowDefinition } from "@ainetwork/adk/types/memory";
+import type {
+	WorkflowDefinition,
+	WorkflowVariable,
+} from "@ainetwork/adk/types/memory";
 import { type Document, Schema } from "mongoose";
 import mongoose from "mongoose";
 
@@ -45,16 +48,7 @@ export interface WorkflowTemplateDocument extends Document {
 	active: boolean;
 	content: string;
 	definition?: WorkflowDefinition;
-	variables?: Record<
-		string,
-		{
-			id: string;
-			label: string;
-			type: "select" | "date_range" | "date_parts" | "text" | "number";
-			options?: Array<string>;
-			resolveAt?: "creation" | "execution";
-		}
-	>;
+	variables?: Record<string, WorkflowVariable>;
 }
 
 export const WorkflowTemplateModel = mongoose.model<WorkflowTemplateDocument>(

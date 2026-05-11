@@ -72,7 +72,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			: thread.messages.map((message: MessageObject) => {
 					return {
 						role: this.getMessageRole(message.role),
-						content: message.content.parts[0],
+						content: message.content.parts[0] as string,
 					};
 				});
 		const userContent: CCMessageParam = { role: "user", content: query };

@@ -17,7 +17,7 @@
     "update:adk": "yarn add -W -D @ainetwork/adk"
   },
   "devDependencies": {
-    "@ainetwork/adk": "file:/Users/shyun/comcom/ain-agent/ain-adk-v0",
+    "@ainetwork/adk": "^0.6.0",
     "lerna": "^8.2.3",
     "tsup": "^8.2.3",
     "typescript": "^5.0.0"

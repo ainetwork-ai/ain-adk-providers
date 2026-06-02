@@ -1,15 +1,24 @@
-import { BaseModel, ModelFetchOptions } from "@ainetwork/adk/modules";
-import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
+import {
+	type AssistantToolCallTurn,
+	BaseModel,
+	type ModelFetchOptions,
+	type ToolResultMessage,
+} from "@ainetwork/adk/modules";
+import type {
+	ConnectorTool,
+	FetchResponse,
+	ToolCall,
+} from "@ainetwork/adk/types/connector";
+import {
+	type MessageObject,
+	MessageRole,
+	type ThreadObject,
+} from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
 	ToolCallDelta,
 } from "@ainetwork/adk/types/stream";
-import type {
-	FetchResponse,
-	ToolCall,
-	ConnectorTool,
-} from "@ainetwork/adk/types/connector";
 import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,
@@ -41,7 +50,13 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		modelName,
 	}: AzureOpenAIConfig) {
 		super();
-		const options = { endpoint, apiKey, deployment, apiVersion, baseURL: baseUrl }
+		const options = {
+			endpoint,
+			apiKey,
+			deployment,
+			apiVersion,
+			baseURL: baseUrl,
+		};
 		this.client = new AzureOpenAIClient(options);
 		this.modelName = modelName;
 	}
@@ -79,10 +94,34 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		return messages.concat(sessionContent).concat(userContent);
 	}
 
-	appendMessages(messages: CCMessageParam[], message: string): void {
+	appendAssistantToolCallTurn(
+		messages: CCMessageParam[],
+		turn: AssistantToolCallTurn,
+	): void {
 		messages.push({
-			role: "user",
-			content: message,
+			role: "assistant",
+			content: turn.content,
+			tool_calls: turn.toolCalls.map(
+				(tc): ChatCompletionMessageFunctionToolCall => ({
+					id: tc.id,
+					type: "function",
+					function: {
+						name: tc.function.name,
+						arguments: tc.function.arguments,
+					},
+				}),
+			),
+		});
+	}
+
+	appendToolResult(
+		messages: CCMessageParam[],
+		result: ToolResultMessage,
+	): void {
+		messages.push({
+			role: "tool",
+			tool_call_id: result.toolCallId,
+			content: result.content,
 		});
 	}
 
@@ -147,7 +186,8 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			model: this.modelName,
 			messages,
 			tools: functions,
-			tool_choice: functions.length > 0 ? (options?.toolChoice ?? "auto") : "none",
+			tool_choice:
+				functions.length > 0 ? (options?.toolChoice ?? "auto") : "none",
 			stream: true,
 			reasoning_effort: options?.reasoning,
 			verbosity: options?.verbosity,

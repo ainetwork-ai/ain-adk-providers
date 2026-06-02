@@ -14,11 +14,15 @@
     "publish:lerna": "lerna run build && lerna publish --no-private",
     "lint": "npx @biomejs/biome check",
     "lint:write": "npx @biomejs/biome check --write",
-    "update:adk": "yarn add -W -D @ainetwork/adk"
+    "test": "jest",
+    "update:adk": "node scripts/update-adk.mjs"
   },
   "devDependencies": {
-    "@ainetwork/adk": "^0.6.0",
+    "@ainetwork/adk": "^0.6.2",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.0",
     "lerna": "^8.2.3",
+    "ts-jest": "^29.4.0",
     "tsup": "^8.2.3",
     "typescript": "^5.0.0"
   },

@@ -1,23 +1,32 @@
-import { BaseModel, ModelFetchOptions } from "@ainetwork/adk/modules";
-import { MessageObject, MessageRole, type ThreadObject } from "@ainetwork/adk/types/memory";
+import {
+	type AssistantToolCallTurn,
+	BaseModel,
+	type ModelFetchOptions,
+	type ToolResultMessage,
+} from "@ainetwork/adk/modules";
+import type {
+	ConnectorTool,
+	FetchResponse,
+	ToolCall,
+} from "@ainetwork/adk/types/connector";
+import {
+	type MessageObject,
+	MessageRole,
+	type ThreadObject,
+} from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
 	ToolCallDelta,
 } from "@ainetwork/adk/types/stream";
-import type {
-	FetchResponse,
-	ToolCall,
-	ConnectorTool,
-} from "@ainetwork/adk/types/connector";
 import {
 	type Content,
 	type FunctionCall,
-	type FunctionDeclaration,
 	FunctionCallingConfigMode,
+	type FunctionDeclaration,
 	type GenerateContentResponse,
 	GoogleGenAI,
-	Model,
+	type Part,
 } from "@google/genai";
 
 export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
@@ -64,14 +73,55 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		return messages.concat(sessionContent).concat(userContent);
 	}
 
-	appendMessages(messages: Content[], message: string): void {
+	appendAssistantToolCallTurn(
+		messages: Content[],
+		turn: AssistantToolCallTurn,
+	): void {
+		const parts: Part[] = [];
+		if (turn.content) {
+			parts.push({ text: turn.content });
+		}
+		for (const tc of turn.toolCalls) {
+			let args: Record<string, unknown> = {};
+			try {
+				args = JSON.parse(tc.function.arguments || "{}");
+			} catch {
+				// Forward the raw argument string so the model can self-correct.
+				args = { __raw: tc.function.arguments };
+			}
+			parts.push({
+				functionCall: {
+					id: tc.id,
+					name: tc.function.name,
+					args,
+				},
+			});
+		}
+		messages.push({ role: "model", parts });
+	}
+
+	appendToolResult(messages: Content[], result: ToolResultMessage): void {
+		const response: Record<string, unknown> = result.isError
+			? { error: result.content }
+			: { output: result.content };
 		messages.push({
 			role: "user",
-			parts: [{ text: message }],
+			parts: [
+				{
+					functionResponse: {
+						id: result.toolCallId,
+						name: result.toolName,
+						response,
+					},
+				},
+			],
 		});
 	}
 
-	async fetch(messages: Content[], options?: ModelFetchOptions): Promise<FetchResponse> {
+	async fetch(
+		messages: Content[],
+		options?: ModelFetchOptions,
+	): Promise<FetchResponse> {
 		const response = await this.client.models.generateContent({
 			model: this.modelName,
 			contents: messages,
@@ -86,9 +136,10 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
 		if (functions.length > 0) {
-			const toolChoiceMode = options?.toolChoice === "required"
-				? FunctionCallingConfigMode.ANY
-				: FunctionCallingConfigMode.AUTO;
+			const toolChoiceMode =
+				options?.toolChoice === "required"
+					? FunctionCallingConfigMode.ANY
+					: FunctionCallingConfigMode.AUTO;
 			const response = await this.client.models.generateContent({
 				model: this.modelName,
 				contents: messages,
@@ -128,9 +179,10 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		functions: FunctionDeclaration[],
 		options?: ModelFetchOptions,
 	): Promise<LLMStream> {
-		const toolChoiceMode = options?.toolChoice === "required"
-			? FunctionCallingConfigMode.ANY
-			: FunctionCallingConfigMode.AUTO;
+		const toolChoiceMode =
+			options?.toolChoice === "required"
+				? FunctionCallingConfigMode.ANY
+				: FunctionCallingConfigMode.AUTO;
 		const stream = await this.client.models.generateContentStream({
 			model: this.modelName,
 			contents: messages,

@@ -9,16 +9,17 @@
   dependencies:
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.6.0":
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.6.0.tgz#cf81712b76c34c583cceb29899cbd934a252a007"
-  integrity sha512-AI/8WcUZzJBXG6XrfAbp3YhQ1cf0BxdCTroB6Tvag9ZQxLKuOyOXfheu/MV4Q98h5o1PsrLJG3jZ+5mDhTdjTg==
+"@ainetwork/adk@^0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.6.2.tgz#df551510f67b44565094c35b28412330775d5168"
+  integrity sha512-VlQz3GBg3w1Xfu9Eg6IXok9IexvuAYEhYAbwzmQ+kil+dRVUkkJSvY3mVka7RVkyNFIO70rAGH28PXV2IK49lw==
   dependencies:
     "@a2a-js/sdk" "^0.3.7"
     "@modelcontextprotocol/sdk" "^1.25.1"
     cors "^2.8.5"
     dotenv "^16.5.0"
     express "^5.1.0"
+    helmet "^8.1.0"
     http-status-codes "^2.3.0"
     node-cron "^4.2.1"
     uuid "^11.1.0"
@@ -4159,6 +4160,11 @@ hasown@^2.0.2:
   integrity sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==
   dependencies:
     function-bind "^1.1.2"
+
+helmet@^8.1.0:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/helmet/-/helmet-8.2.0.tgz#61cb43244de24255a288c2fddb36086074eb1812"
+  integrity sha512-DRgTIUgnWcJ62KyarxxziuqYxKGnR6Rgg19BlbucN/dpmJbl1XOit6qvoOX0ZT+HhWe5OUVhU/a1zpGyc1xA0Q==
 
 hono@^4.11.4:
   version "4.12.14"

@@ -29,6 +29,9 @@ export const UserWorkflowObjectSchema = new Schema(
 			required: true,
 			default: false,
 		},
+		category: {
+			type: String,
+		},
 		templateId: {
 			type: String,
 		},
@@ -72,6 +75,7 @@ export interface UserWorkflowDocument extends Document {
 	title: string;
 	description?: string;
 	active: boolean;
+	category?: string;
 	templateId?: string;
 	content: string;
 	definition?: WorkflowDefinition;

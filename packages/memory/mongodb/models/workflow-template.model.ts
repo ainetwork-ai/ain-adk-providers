@@ -25,6 +25,9 @@ export const WorkflowTemplateObjectSchema = new Schema(
 			required: true,
 			default: false,
 		},
+		category: {
+			type: String,
+		},
 		content: {
 			type: String,
 			required: true,
@@ -46,6 +49,7 @@ export interface WorkflowTemplateDocument extends Document {
 	title: string;
 	description: string;
 	active: boolean;
+	category?: string;
 	content: string;
 	definition?: WorkflowDefinition;
 	variables?: Record<string, WorkflowVariable>;

@@ -25,7 +25,7 @@
     "jwks-rsa": "^3.1.0"
   },
   "peerDependencies": {
-    "@ainetwork/adk": "^0.6.2"
+    "@ainetwork/adk": "^0.6.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

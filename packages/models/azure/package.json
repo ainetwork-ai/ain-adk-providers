@@ -24,7 +24,7 @@
     "openai": "^6.9.1"
   },
   "peerDependencies": {
-    "@ainetwork/adk": "^0.6.2"
+    "@ainetwork/adk": "^0.6.3"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

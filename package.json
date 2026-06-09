@@ -18,7 +18,7 @@
     "update:adk": "node scripts/update-adk.mjs"
   },
   "devDependencies": {
-    "@ainetwork/adk": "^0.6.2",
+    "@ainetwork/adk": "^0.6.3",
     "@types/jest": "^30.0.0",
     "jest": "^30.0.0",
     "lerna": "^8.2.3",

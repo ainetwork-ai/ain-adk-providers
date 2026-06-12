@@ -1,7 +1,8 @@
-import { IAgentMemory, IIntentMemory, IMemory, IUserWorkflowMemory, IThreadMemory, IWorkflowTemplateMemory } from "@ainetwork/adk/modules";
+import { IAgentMemory, IDocumentMemory, IIntentMemory, IMemory, IUserWorkflowMemory, IThreadMemory, IWorkflowTemplateMemory } from "@ainetwork/adk/modules";
 import mongoose from "mongoose";
 import { loggers } from "@ainetwork/adk/utils/logger";
 import { MongoDBAgent } from "./agent.memory";
+import { MongoDBDocument } from "./document.memory";
 import { MongoDBIntent } from "./intent.memory";
 import { MongoDBThread } from "./thread.memory";
 import { MongoDBUserWorkflow } from "./user-workflow.memory";
@@ -39,6 +40,7 @@ export class MongoDBMemory implements IMemory {
   private threadMemory: MongoDBThread;
   private workflowTemplateMemory: MongoDBWorkflowTemplate;
   private userWorkflowMemory: MongoDBUserWorkflow;
+  private documentMemory: MongoDBDocument;
 
   constructor(config: string | MongoDBMemoryConfig) {
     const cfg = typeof config === 'string' ? { uri: config } : config;
@@ -93,6 +95,11 @@ export class MongoDBMemory implements IMemory {
 			this.executeWithRetry.bind(this),
 			this.getOperationTimeout.bind(this)
 		);
+
+		this.documentMemory = new MongoDBDocument(
+			this.executeWithRetry.bind(this),
+			this.getOperationTimeout.bind(this)
+		);
   }
 
   public getAgentMemory(): IAgentMemory {
@@ -113,6 +120,10 @@ export class MongoDBMemory implements IMemory {
 
   public getUserWorkflowMemory(): IUserWorkflowMemory {
     return this.userWorkflowMemory;
+  }
+
+  public getDocumentMemory(): IDocumentMemory {
+    return this.documentMemory;
   }
 
   private setupMongooseEventListeners(): void {

@@ -72,6 +72,7 @@ export class MongoDBDocument implements IDocumentMemory {
       if (filter?.workflowId) query.workflowId = filter.workflowId;
       if (filter?.threadId) query.threadId = filter.threadId;
       if (filter?.source) query.source = filter.source;
+      if (filter?.groupId) query.groupId = filter.groupId;
 
       const documents = await DocumentModel.find(query)
         .maxTimeMS(timeout)

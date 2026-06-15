@@ -71,6 +71,9 @@ export class InMemoryDocument implements IDocumentMemory {
     if (filter?.source) {
       documents = documents.filter((d) => d.source === filter.source);
     }
+    if (filter?.groupId) {
+      documents = documents.filter((d) => d.groupId === filter.groupId);
+    }
 
     return documents;
   }

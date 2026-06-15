@@ -1,5 +1,6 @@
 import {
 	DocumentFormat,
+	type DocumentSlot,
 	DocumentSource,
 } from "@ainetwork/adk/types/document";
 import type { WorkflowRenderedBlock } from "@ainetwork/adk/types/memory";
@@ -34,6 +35,13 @@ export const DocumentObjectSchema = new Schema(
 		},
 		blocks: {
 			type: Schema.Types.Mixed,
+		},
+		slots: {
+			type: Schema.Types.Mixed,
+		},
+		groupId: {
+			type: String,
+			index: true,
 		},
 		source: {
 			type: String,
@@ -79,6 +87,8 @@ export interface DocumentDocument extends Document {
 	format: DocumentFormat;
 	content: string;
 	blocks?: WorkflowRenderedBlock[];
+	slots?: DocumentSlot[];
+	groupId?: string;
 	source: DocumentSource;
 	workflowId?: string;
 	threadId?: string;

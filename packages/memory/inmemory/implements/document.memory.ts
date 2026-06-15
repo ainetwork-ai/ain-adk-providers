@@ -71,8 +71,11 @@ export class InMemoryDocument implements IDocumentMemory {
     if (filter?.source) {
       documents = documents.filter((d) => d.source === filter.source);
     }
-    if (filter?.groupId) {
-      documents = documents.filter((d) => d.groupId === filter.groupId);
+    if (filter?.labels) {
+      const entries = Object.entries(filter.labels);
+      documents = documents.filter((d) =>
+        entries.every(([key, value]) => d.labels?.[key] === value)
+      );
     }
 
     return documents;

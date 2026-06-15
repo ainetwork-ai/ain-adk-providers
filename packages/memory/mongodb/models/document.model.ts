@@ -39,9 +39,11 @@ export const DocumentObjectSchema = new Schema(
 		slots: {
 			type: Schema.Types.Mixed,
 		},
-		groupId: {
-			type: String,
-			index: true,
+		// Faceted grouping (e.g. category/workplaceId/month). Stored as a free
+		// map; index specific keys (e.g. `labels.workplaceId`) if query volume
+		// warrants it.
+		labels: {
+			type: Schema.Types.Mixed,
 		},
 		source: {
 			type: String,
@@ -88,7 +90,7 @@ export interface DocumentDocument extends Document {
 	content: string;
 	blocks?: WorkflowRenderedBlock[];
 	slots?: DocumentSlot[];
-	groupId?: string;
+	labels?: Record<string, string>;
 	source: DocumentSource;
 	workflowId?: string;
 	threadId?: string;

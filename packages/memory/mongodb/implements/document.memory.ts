@@ -72,7 +72,12 @@ export class MongoDBDocument implements IDocumentMemory {
       if (filter?.workflowId) query.workflowId = filter.workflowId;
       if (filter?.threadId) query.threadId = filter.threadId;
       if (filter?.source) query.source = filter.source;
-      if (filter?.groupId) query.groupId = filter.groupId;
+      if (filter?.labels) {
+        // Subset match: every provided label must equal the stored value.
+        for (const [key, value] of Object.entries(filter.labels)) {
+          query[`labels.${key}`] = value;
+        }
+      }
 
       const documents = await DocumentModel.find(query)
         .maxTimeMS(timeout)

@@ -1,4 +1,5 @@
 import {
+	type DocumentAdvice,
 	DocumentFormat,
 	type DocumentSlot,
 	DocumentSource,
@@ -37,6 +38,11 @@ export const DocumentObjectSchema = new Schema(
 			type: Schema.Types.Mixed,
 		},
 		slots: {
+			type: Schema.Types.Mixed,
+		},
+		// Cached AI advice ({ content, generatedAt }). Free-form so the schema
+		// doesn't strip it on update (mongoose strict mode).
+		advice: {
 			type: Schema.Types.Mixed,
 		},
 		// Faceted grouping (e.g. category/workplaceId/month). Stored as a free
@@ -90,6 +96,7 @@ export interface DocumentDocument extends Document {
 	content: string;
 	blocks?: WorkflowRenderedBlock[];
 	slots?: DocumentSlot[];
+	advice?: DocumentAdvice;
 	labels?: Record<string, string>;
 	source: DocumentSource;
 	workflowId?: string;

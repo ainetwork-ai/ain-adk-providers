@@ -9,7 +9,7 @@ importers:
   .:
     devDependencies:
       '@ainetwork/adk':
-        specifier: file:/Users/shyun/comcom/ain-agent/ain-adk-v0
+        specifier: file:/Users/shyun/comcom/ain-enterprise/ain-adk-v0
         version: file:../ain-adk-v0(zod@4.4.3)
       '@types/jest':
         specifier: ^30.0.0
@@ -5564,7 +5564,7 @@ snapshots:
 
   dotenv-expand@11.0.7:
     dependencies:
-      dotenv: 16.4.7
+      dotenv: 16.6.1
 
   dotenv@16.4.7: {}
 

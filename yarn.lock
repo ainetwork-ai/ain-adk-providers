@@ -9,24 +9,7 @@
   dependencies:
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.6.3":
-  version "0.6.3"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.6.3.tgz#ef40f51351f3fb33001765d66ff0ae119bab3764"
-  integrity sha512-QobhB/JpNzIwGR56BubLVkeC07UH1GFOr8ffQm5wBhwbgHYdLIiHOx3UZBtE6yLpCkihLpqSJbQ2JNIVRiVLGA==
-  dependencies:
-    "@a2a-js/sdk" "^0.3.7"
-    "@modelcontextprotocol/sdk" "^1.25.1"
-    cors "^2.8.5"
-    dotenv "^16.5.0"
-    express "^5.1.0"
-    helmet "^8.1.0"
-    http-status-codes "^2.3.0"
-    node-cron "^4.2.1"
-    uuid "^11.1.0"
-    winston "^3.17.0"
-    winston-daily-rotate-file "^5.0.0"
-
-"@ainetwork/adk@file:/Users/shyun/comcom/ain-agent/ain-adk-v0":
+"@ainetwork/adk@file:../ain-adk-v0":
   version "0.6.3"
   dependencies:
     "@a2a-js/sdk" "^0.3.7"

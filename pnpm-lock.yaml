@@ -7,10 +7,11 @@ settings:
 importers:
 
   .:
-    devDependencies:
+    dependencies:
       '@ainetwork/adk':
-        specifier: file:/Users/shyun/comcom/ain-enterprise/ain-adk-v0
-        version: file:../ain-adk-v0(zod@4.4.3)
+        specifier: ^0.7.0
+        version: 0.7.0(zod@4.4.3)
+    devDependencies:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -47,8 +48,8 @@ packages:
       express:
         optional: true
 
-  '@ainetwork/adk@file:../ain-adk-v0':
-    resolution: {directory: ../ain-adk-v0, type: directory}
+  '@ainetwork/adk@0.7.0':
+    resolution: {integrity: sha512-u9eeqp0G+sWtyRzqb9yB/gcbEvmqqtO7wgO3gQ4/X1mvmh5zyV9ZWuPNEqxCe7bo7EsiuNIeygiL4FcGD/xQpA==}
     engines: {node: '>=20'}
 
   '@babel/code-frame@7.29.7':
@@ -3846,7 +3847,7 @@ snapshots:
     optionalDependencies:
       express: 5.2.1
 
-  '@ainetwork/adk@file:../ain-adk-v0(zod@4.4.3)':
+  '@ainetwork/adk@0.7.0(zod@4.4.3)':
     dependencies:
       '@a2a-js/sdk': 0.3.13(express@5.2.1)
       '@modelcontextprotocol/sdk': 1.29.0(zod@4.4.3)

@@ -1,5 +1,9 @@
 import type { IDocumentMemory } from "@ainetwork/adk/modules";
-import type { Document, DocumentFilter } from "@ainetwork/adk/types/document";
+import type {
+  Document,
+  DocumentFilter,
+  DocumentSlot,
+} from "@ainetwork/adk/types/document";
 import { DocumentModel } from "../models/document.model";
 
 export type ExecuteWithRetryFn = <T>(
@@ -52,6 +56,39 @@ export class MongoDBDocument implements IDocumentMemory {
         { $set: mutableUpdates }
       ).maxTimeMS(timeout);
     }, "updateDocument()");
+  }
+
+  public async updateDocumentSlot(
+    documentId: string,
+    slotId: string,
+    patch: Partial<DocumentSlot>
+  ): Promise<void> {
+    // Target only the matched slot via the positional `$` operator so
+    // concurrent fills of other slots are never overwritten. `slotId` is the
+    // slot's identity and must not be patched.
+    const { slotId: _slotId, ...fields } = patch;
+    const set: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    const unset: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(fields)) {
+      if (value === undefined) {
+        unset[`slots.$.${key}`] = "";
+      } else {
+        set[`slots.$.${key}`] = value;
+      }
+    }
+
+    const update: Record<string, unknown> = { $set: set, $inc: { version: 1 } };
+    if (Object.keys(unset).length > 0) {
+      update.$unset = unset;
+    }
+
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      await DocumentModel.updateOne(
+        { documentId, "slots.slotId": slotId },
+        update
+      ).maxTimeMS(timeout);
+    }, "updateDocumentSlot()");
   }
 
   public async deleteDocument(documentId: string): Promise<void> {

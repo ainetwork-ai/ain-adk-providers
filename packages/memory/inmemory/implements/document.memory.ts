@@ -1,5 +1,9 @@
 import { IDocumentMemory } from "@ainetwork/adk/modules";
-import type { Document, DocumentFilter } from "@ainetwork/adk/types/document";
+import type {
+  Document,
+  DocumentFilter,
+  DocumentSlot,
+} from "@ainetwork/adk/types/document";
 
 export class InMemoryDocument implements IDocumentMemory {
   private documents: Map<string, Document> = new Map();
@@ -32,6 +36,42 @@ export class InMemoryDocument implements IDocumentMemory {
     // `documentId` is immutable; preserve it regardless of the payload.
     const updated = { ...existing, ...document, documentId };
     this.documents.set(documentId, updated);
+  }
+
+  public async updateDocumentSlot(
+    documentId: string,
+    slotId: string,
+    patch: Partial<DocumentSlot>
+  ): Promise<void> {
+    const existing = this.documents.get(documentId);
+    if (!existing) {
+      throw new Error(`Document not found: ${documentId}`);
+    }
+
+    // Read-modify-write on the latest stored document (not a caller snapshot),
+    // patching only the matched slot so concurrent fills of other slots are
+    // preserved. `undefined` patch values clear the corresponding key.
+    const { slotId: _slotId, ...fields } = patch;
+    const slots = (existing.slots ?? []).map((slot) => {
+      if (slot.slotId !== slotId) return slot;
+      const next: Record<string, unknown> = { ...slot };
+      for (const [key, value] of Object.entries(fields)) {
+        if (value === undefined) {
+          delete next[key];
+        } else {
+          next[key] = value;
+        }
+      }
+      return next as DocumentSlot;
+    });
+
+    this.documents.set(documentId, {
+      ...existing,
+      slots,
+      version: existing.version + 1,
+      updatedAt: new Date().toISOString(),
+      documentId,
+    });
   }
 
   public async deleteDocument(documentId: string): Promise<void> {

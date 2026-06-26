@@ -114,7 +114,12 @@ export class InMemoryDocument implements IDocumentMemory {
     if (filter?.labels) {
       const entries = Object.entries(filter.labels);
       documents = documents.filter((d) =>
-        entries.every(([key, value]) => d.labels?.[key] === value)
+        entries.every(([key, value]) => {
+          const actual = d.labels?.[key];
+          return Array.isArray(value)
+            ? actual !== undefined && value.includes(actual)
+            : actual === value;
+        })
       );
     }
 

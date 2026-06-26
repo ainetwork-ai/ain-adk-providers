@@ -5,6 +5,7 @@ import type {
   DocumentSlot,
 } from "@ainetwork/adk/types/document";
 import { DocumentModel } from "../models/document.model";
+import { buildDocumentQuery } from "./build-document-query";
 
 export type ExecuteWithRetryFn = <T>(
   operation: () => Promise<T>,
@@ -104,17 +105,7 @@ export class MongoDBDocument implements IDocumentMemory {
   ): Promise<Document[]> {
     return this.executeWithRetry(async () => {
       const timeout = this.getOperationTimeout();
-      const query: Record<string, unknown> = {};
-      if (userId) query.userId = userId;
-      if (filter?.workflowId) query.workflowId = filter.workflowId;
-      if (filter?.threadId) query.threadId = filter.threadId;
-      if (filter?.source) query.source = filter.source;
-      if (filter?.labels) {
-        // Subset match: every provided label must equal the stored value.
-        for (const [key, value] of Object.entries(filter.labels)) {
-          query[`labels.${key}`] = value;
-        }
-      }
+      const query = buildDocumentQuery(userId, filter);
 
       const documents = await DocumentModel.find(query)
         .maxTimeMS(timeout)

@@ -13,9 +13,6 @@ export interface DocumentRouteOptions {
 	managedCategories?: string[];
 	/** Document label key holding the category. Default: "category". */
 	categoryLabel?: string;
-	/** Document label key holding the scope value. Default: "scope". The
-	 * consumer maps its own label key here. */
-	scopeLabel?: string;
 }
 
 /**
@@ -31,8 +28,18 @@ export function buildDocumentRouteRequirements(
 	opts: DocumentRouteOptions = {},
 ): RouteRequirement[] {
 	const categoryLabel = opts.categoryLabel ?? "category";
-	const scopeLabel = opts.scopeLabel ?? "scope";
 	const managed = new Set(opts.managedCategories ?? []);
+
+	// Surface the document's labels as authz attrs. The resolver matches
+	// role.category against attrs.category and each role.scope dimension key
+	// against attrs[key], so the scope dimensions are just the document's own
+	// label keys (e.g. "workplace") — no per-agent scope config needed.
+	const toAttrs = (labels: Record<string, string>) => {
+		const attrs: Record<string, string> = { ...labels };
+		const category = labels[categoryLabel];
+		if (category) attrs.category = category;
+		return attrs;
+	};
 
 	const attrsOfDoc = async (req: DocReq) => {
 		// The authz middleware runs at the /api mount, before the inner ":id"
@@ -42,11 +49,7 @@ export function buildDocumentRouteRequirements(
 		if (!id) return null;
 		const doc = await documentMemory.getDocument(id);
 		if (!doc) return null;
-		const labels = (doc.labels ?? {}) as Record<string, string>;
-		const attrs: Record<string, string> = {};
-		if (labels[categoryLabel]) attrs.category = labels[categoryLabel];
-		if (labels[scopeLabel]) attrs.scope = labels[scopeLabel];
-		return attrs;
+		return toAttrs((doc.labels ?? {}) as Record<string, string>);
 	};
 
 	const attrsFromBody = (req: DocReq) => {
@@ -54,9 +57,7 @@ export function buildDocumentRouteRequirements(
 		const category = labels[categoryLabel];
 		// Non-managed (personal) documents: not gated — owner creates their own.
 		if (!category || !managed.has(category)) return "skip" as const;
-		const attrs: Record<string, string> = { category };
-		if (labels[scopeLabel]) attrs.scope = labels[scopeLabel];
-		return attrs;
+		return toAttrs(labels);
 	};
 
 	return [

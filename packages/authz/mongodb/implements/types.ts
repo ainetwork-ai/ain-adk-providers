@@ -1,5 +1,4 @@
 export type Action = "read" | "write";
-export type RoleScope = "all" | "scoped";
 
 export interface Role {
 	roleId: string;
@@ -8,7 +7,10 @@ export interface Role {
 	resource: string; // ADK entity, e.g. "document"; "*" = any resource
 	actions: Action[];
 	category?: string; // optional category constraint; omit = applies to any category
-	scope: RoleScope; // all = any scope; scope = the scope from the assignment
+	/** Scope dimension keys this role is restricted by, e.g. ["workplace"] or
+	 * ["workplace", "section"]. Each key names a document label (and an
+	 * assignment scope key) to match on. Empty array = global (no restriction). */
+	scope: string[];
 	createdAt: string;
 	updatedAt: string;
 }
@@ -17,7 +19,10 @@ export interface RoleAssignment {
 	assignmentId: string;
 	email: string; // the user's email / UPN (authz principal)
 	roleId: string;
-	scope?: string; // required for scope:"scoped" roles
+	/** Values for the role's scope dimensions, e.g. { workplace: "피자힐" }. A
+	 * dimension the role declares but the assignment omits acts as a wildcard
+	 * (e.g. grant a whole workplace across all sections). */
+	scope?: Record<string, string>;
 	createdAt: string;
 	createdBy: string;
 }

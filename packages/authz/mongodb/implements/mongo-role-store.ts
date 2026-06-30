@@ -9,7 +9,7 @@ const RoleSchema = new Schema<Role>(
 		resource: { type: String, required: true },
 		actions: { type: [String], required: true },
 		category: { type: String },
-		scope: { type: String, enum: ["all", "scoped"], required: true },
+		scope: { type: [String], default: [] }, // dimension keys; [] = global
 		createdAt: { type: String, required: true },
 		updatedAt: { type: String, required: true },
 	},
@@ -21,7 +21,7 @@ const AssignmentSchema = new Schema<RoleAssignment>(
 		assignmentId: { type: String, required: true, unique: true },
 		email: { type: String, required: true, index: true },
 		roleId: { type: String, required: true },
-		scope: { type: String },
+		scope: { type: Schema.Types.Mixed }, // { [dimensionKey]: value }
 		createdAt: { type: String, required: true },
 		createdBy: { type: String, required: true },
 	},

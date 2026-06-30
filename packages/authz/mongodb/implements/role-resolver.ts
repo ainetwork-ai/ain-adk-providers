@@ -5,7 +5,7 @@ import type { Action, Role, RoleStore } from "./types";
 interface Effective {
 	at: number;
 	roleById: Map<string, Role>;
-	assignments: { roleId: string; scope?: string }[];
+	assignments: { roleId: string; scope?: Record<string, string> }[];
 }
 
 function roleMatches(role: Role, resource: string, action: Action, category?: string): boolean {
@@ -63,8 +63,24 @@ export class RoleResolver implements PermissionResolver {
 		for (const a of eff.assignments) {
 			const role = eff.roleById.get(a.roleId);
 			if (!role || !roleMatches(role, resource, action as Action, attrs?.category)) continue;
-			if (role.scope === "all") return true;
-			if (a.scope && a.scope === attrs?.scope) return true;
+			// Global role (no scope dimensions) → allowed.
+			if (!role.scope || role.scope.length === 0) return true;
+			// Scoped: every dimension the assignment specifies must equal the
+			// document's label of the same key; dimensions the assignment omits
+			// are wildcards (e.g. a whole workplace across all sections). At least
+			// one declared dimension must be specified, else the grant is empty.
+			let specified = 0;
+			let ok = true;
+			for (const key of role.scope) {
+				const want = a.scope?.[key];
+				if (want === undefined) continue; // wildcard for this dimension
+				specified++;
+				if (attrs?.[key] !== want) {
+					ok = false;
+					break;
+				}
+			}
+			if (ok && specified > 0) return true;
 		}
 		return false;
 	}

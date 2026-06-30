@@ -9,19 +9,20 @@ type DocReq = { baseUrl: string; path: string; body?: unknown };
 export interface DocumentRouteOptions {
 	/** Categories that are "managed": creating one requires a matching write
 	 * role. Other documents are personal and freely creatable by their owner.
-	 * Default: ["logbook"]. */
+	 * Default: [] (nothing gated on create). The consumer supplies its own set. */
 	managedCategories?: string[];
 	/** Document label key holding the category. Default: "category". */
 	categoryLabel?: string;
-	/** Document label key holding the fnb. Default: "workplace". */
-	fnbLabel?: string;
+	/** Document label key holding the scope value. Default: "scope". The
+	 * consumer maps its own label key here. */
+	scopeLabel?: string;
 }
 
 /**
  * Route requirements for the generic ADK `/api/document/*` routes.
  *
  * - list/byId reads: governed (the resolver opens reads by default).
- * - byId writes (update/delete): fnb/category checked against the target doc.
+ * - byId writes (update/delete): scope/category checked against the target doc.
  * - create (fromBody): gated only for managed categories; other documents are
  *   left to the handler's own owner check.
  */
@@ -30,8 +31,8 @@ export function buildDocumentRouteRequirements(
 	opts: DocumentRouteOptions = {},
 ): RouteRequirement[] {
 	const categoryLabel = opts.categoryLabel ?? "category";
-	const fnbLabel = opts.fnbLabel ?? "workplace";
-	const managed = new Set(opts.managedCategories ?? ["logbook"]);
+	const scopeLabel = opts.scopeLabel ?? "scope";
+	const managed = new Set(opts.managedCategories ?? []);
 
 	const attrsOfDoc = async (req: DocReq) => {
 		// The authz middleware runs at the /api mount, before the inner ":id"
@@ -44,7 +45,7 @@ export function buildDocumentRouteRequirements(
 		const labels = (doc.labels ?? {}) as Record<string, string>;
 		const attrs: Record<string, string> = {};
 		if (labels[categoryLabel]) attrs.category = labels[categoryLabel];
-		if (labels[fnbLabel]) attrs.fnb = labels[fnbLabel];
+		if (labels[scopeLabel]) attrs.scope = labels[scopeLabel];
 		return attrs;
 	};
 
@@ -54,7 +55,7 @@ export function buildDocumentRouteRequirements(
 		// Non-managed (personal) documents: not gated — owner creates their own.
 		if (!category || !managed.has(category)) return "skip" as const;
 		const attrs: Record<string, string> = { category };
-		if (labels[fnbLabel]) attrs.fnb = labels[fnbLabel];
+		if (labels[scopeLabel]) attrs.scope = labels[scopeLabel];
 		return attrs;
 	};
 

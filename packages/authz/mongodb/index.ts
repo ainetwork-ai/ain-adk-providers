@@ -9,3 +9,5 @@ export * from "./implements/role-resolver";
 export * from "./implements/mongo-role-store";
 export * from "./implements/inmemory-role-store";
 export * from "./implements/route-requirements";
+// High-level one-shot module (recommended): new MongoAuthz({ connectionString, documentMemory }).
+export * from "./implements/mongo-authz";

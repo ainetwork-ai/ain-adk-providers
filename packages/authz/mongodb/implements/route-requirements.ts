@@ -13,15 +13,15 @@ export interface DocumentRouteOptions {
 	managedCategories?: string[];
 	/** Document label key holding the category. Default: "category". */
 	categoryLabel?: string;
-	/** Document label key holding the venue. Default: "workplace". */
-	venueLabel?: string;
+	/** Document label key holding the fnb. Default: "workplace". */
+	fnbLabel?: string;
 }
 
 /**
  * Route requirements for the generic ADK `/api/document/*` routes.
  *
  * - list/byId reads: governed (the resolver opens reads by default).
- * - byId writes (update/delete): venue/category checked against the target doc.
+ * - byId writes (update/delete): fnb/category checked against the target doc.
  * - create (fromBody): gated only for managed categories; other documents are
  *   left to the handler's own owner check.
  */
@@ -30,7 +30,7 @@ export function buildDocumentRouteRequirements(
 	opts: DocumentRouteOptions = {},
 ): RouteRequirement[] {
 	const categoryLabel = opts.categoryLabel ?? "category";
-	const venueLabel = opts.venueLabel ?? "workplace";
+	const fnbLabel = opts.fnbLabel ?? "workplace";
 	const managed = new Set(opts.managedCategories ?? ["logbook"]);
 
 	const attrsOfDoc = async (req: DocReq) => {
@@ -44,7 +44,7 @@ export function buildDocumentRouteRequirements(
 		const labels = (doc.labels ?? {}) as Record<string, string>;
 		const attrs: Record<string, string> = {};
 		if (labels[categoryLabel]) attrs.category = labels[categoryLabel];
-		if (labels[venueLabel]) attrs.venue = labels[venueLabel];
+		if (labels[fnbLabel]) attrs.fnb = labels[fnbLabel];
 		return attrs;
 	};
 
@@ -54,7 +54,7 @@ export function buildDocumentRouteRequirements(
 		// Non-managed (personal) documents: not gated — owner creates their own.
 		if (!category || !managed.has(category)) return "skip" as const;
 		const attrs: Record<string, string> = { category };
-		if (labels[venueLabel]) attrs.venue = labels[venueLabel];
+		if (labels[fnbLabel]) attrs.fnb = labels[fnbLabel];
 		return attrs;
 	};
 

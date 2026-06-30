@@ -5,7 +5,7 @@ import type { Action, Role, RoleStore } from "./types";
 interface Effective {
 	at: number;
 	roleById: Map<string, Role>;
-	assignments: { roleId: string; venue?: string }[];
+	assignments: { roleId: string; fnb?: string }[];
 }
 
 function roleMatches(role: Role, resource: string, action: Action, category?: string): boolean {
@@ -20,7 +20,7 @@ function roleMatches(role: Role, resource: string, action: Action, category?: st
  * PermissionResolver backed by roles + per-user assignments.
  *
  * Policy: read is open to all authenticated users; writes are gated by role +
- * venue (and optional category). The principal passed in is the caller's email
+ * fnb (and optional category). The principal passed in is the caller's email
  * (see the AuthzModule wiring), matched against assignments by email.
  */
 export class RoleResolver implements PermissionResolver {
@@ -44,7 +44,7 @@ export class RoleResolver implements PermissionResolver {
 		const eff: Effective = {
 			at: Date.now(),
 			roleById: new Map(roles.map((r) => [r.roleId, r])),
-			assignments: assignments.map((a) => ({ roleId: a.roleId, venue: a.venue })),
+			assignments: assignments.map((a) => ({ roleId: a.roleId, fnb: a.fnb })),
 		};
 		this.cache.set(principal, eff);
 		return eff;
@@ -57,14 +57,14 @@ export class RoleResolver implements PermissionResolver {
 		attrs?: Record<string, string>,
 	): Promise<boolean> {
 		// Read is open to all authenticated users by default; only writes are
-		// gated by role + venue.
+		// gated by role + fnb.
 		if (action === "read") return true;
 		const eff = await this.load(principal);
 		for (const a of eff.assignments) {
 			const role = eff.roleById.get(a.roleId);
 			if (!role || !roleMatches(role, resource, action as Action, attrs?.category)) continue;
 			if (role.scope === "all") return true;
-			if (a.venue && a.venue === attrs?.venue) return true;
+			if (a.fnb && a.fnb === attrs?.fnb) return true;
 		}
 		return false;
 	}

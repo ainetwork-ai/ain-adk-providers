@@ -1,5 +1,5 @@
 export type Action = "read" | "write";
-export type RoleScope = "all" | "venue";
+export type RoleScope = "all" | "fnb";
 
 export interface Role {
 	roleId: string;
@@ -8,7 +8,7 @@ export interface Role {
 	resource: string; // ADK entity, e.g. "document"; "*" = any resource
 	actions: Action[];
 	category?: string; // optional document category constraint (e.g. "logbook"); omit = any category
-	scope: RoleScope; // all = any venue; venue = the venue from the assignment
+	scope: RoleScope; // all = any fnb; fnb = the fnb from the assignment
 	createdAt: string;
 	updatedAt: string;
 }
@@ -17,7 +17,7 @@ export interface RoleAssignment {
 	assignmentId: string;
 	email: string; // the user's email / UPN (authz principal)
 	roleId: string;
-	venue?: string; // required for scope:"venue" roles
+	fnb?: string; // required for scope:"fnb" roles
 	createdAt: string;
 	createdBy: string;
 }

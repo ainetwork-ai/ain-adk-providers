@@ -1,0 +1,33 @@
+{
+  "name": "@ainetwork/adk-provider-authz-mongodb",
+  "version": "0.7.1",
+  "author": "AI Network (https://ainetwork.ai)",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "mongoose": "^8.16.5"
+  },
+  "peerDependencies": {
+    "@ainetwork/adk": "^0.7.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "license": "MIT",
+  "publishConfig": { "access": "public" }
+}

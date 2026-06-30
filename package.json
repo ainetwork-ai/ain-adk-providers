@@ -6,6 +6,7 @@
     "packages/memory/*",
     "packages/models/*",
     "packages/auth/*",
+    "packages/authz/*",
     "examples/*"
   ],
   "scripts": {

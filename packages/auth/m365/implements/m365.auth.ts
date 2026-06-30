@@ -22,7 +22,8 @@ interface AzureADTokenPayload {
   tid?: string;
   appid?: string;
   azp?: string;
-  preferred_username?: string;
+  upn?: string; // userPrincipalName (Azure AD v1.0 tokens)
+  preferred_username?: string; // UPN-equivalent in v2.0 tokens
   email?: string;
   name?: string;
 }
@@ -160,8 +161,9 @@ export class M365Auth extends AuthModule {
       return {
         isAuthenticated: true,
         userId: (payload.oid || payload.sub) as string,
-        // UPN (preferred_username) carries the email for WISE; fall back to email claim.
-        email: payload.preferred_username || payload.email,
+        // userPrincipalName carries the email. In the id_token that value is the
+        // `preferred_username` (v2.0) / `upn` (v1.0) claim; fall back to `email`.
+        email: payload.preferred_username || payload.upn || payload.email,
       };
     } catch (err) {
       console.error("M365 auth verification failed:", (err as Error).message);

@@ -141,6 +141,7 @@ export class M365Auth extends AuthModule {
             return {
               isAuthenticated: true,
               userId: payload.sub,
+              email: payload.email,
             };
           }
         } catch {
@@ -159,6 +160,8 @@ export class M365Auth extends AuthModule {
       return {
         isAuthenticated: true,
         userId: (payload.oid || payload.sub) as string,
+        // UPN (preferred_username) carries the email for WISE; fall back to email claim.
+        email: payload.preferred_username || payload.email,
       };
     } catch (err) {
       console.error("M365 auth verification failed:", (err as Error).message);

@@ -1,4 +1,3 @@
-import type { IDocumentMemory } from "@ainetwork/adk/modules";
 import type { RouteRequirement } from "@ainetwork/adk/types/authz";
 
 // Minimal request shape we read. Avoids depending on a specific @types/express
@@ -6,46 +5,47 @@ import type { RouteRequirement } from "@ainetwork/adk/types/authz";
 // A wider express Request is assignable to this (function param contravariance).
 type DocReq = { baseUrl: string; path: string; body?: unknown };
 
-export interface DocumentRouteOptions {
-	/** The agent's document memory. Only needed to authorize operations on an
-	 * *existing* document (update/delete), where the target's labels must be
-	 * loaded to check its category/scope. Omit it if you only gate creation:
-	 * create reads labels from the request body, and reads are open — neither
-	 * touches stored documents. When omitted, update/delete fall back to the
-	 * handler's own owner check. */
-	documentMemory?: IDocumentMemory;
+export interface ResourceRouteOptions {
+	/** ADK resource name, matched against Role.resource (e.g. "document"). */
+	resource: string;
+	/** Route mount base for this resource, e.g. "/api/document". The byId routes
+	 * are derived as `${basePath}/:id`, `${basePath}/update/:id`,
+	 * `${basePath}/delete/:id`. */
+	basePath: string;
+	/** Loads an existing record's labels for byId (update/delete/read) authz.
+	 * Omit to gate only create (+ list); update/delete then fall back to the
+	 * handler's own owner check. This is the only thing that needs storage
+	 * access, so route building itself stays memory-agnostic. */
+	load?: (id: string) => Promise<{ labels?: Record<string, string> } | null | undefined>;
 	/** Document label key holding the category. Default: "category". */
 	categoryLabel?: string;
 	/** Predicate deciding whether a document category is "managed": creating one
-	 * requires a matching write role. Other (personal) documents are freely
-	 * creatable by their owner. Called synchronously per create request, so it
-	 * must read from a cache. MongoAuthz supplies one derived from the roles in
-	 * the DB (a category with a write role is managed), so new categories need no
-	 * restart. Default: nothing is managed. */
+	 * requires a matching write role. Called synchronously per create request, so
+	 * it must read from a cache. Default: nothing is managed. */
 	isManaged?: (category: string) => boolean;
 	/** Static fallback used only when `isManaged` is not supplied. */
 	managedCategories?: string[];
 }
 
 /**
- * Route requirements for the generic ADK `/api/document/*` routes.
+ * Route requirements for a generic ADK resource CRUD surface under `basePath`.
  *
  * - list / read: open (the resolver opens reads by default).
- * - create (fromBody): gated only for managed categories; other documents are
+ * - create (fromBody): gated only for managed categories; other records are
  *   left to the handler's own owner check. Reads labels from the request body.
- * - update/delete (byId): scope/category checked against the target document —
- *   only added when `documentMemory` is supplied (needed to load the target).
+ * - update/delete (byId): scope/category checked against the target record —
+ *   only added when `load` is supplied (needed to load the target's labels).
  */
-export function buildDocumentRouteRequirements(opts: DocumentRouteOptions = {}): RouteRequirement[] {
-	const { documentMemory } = opts;
+export function buildResourceRouteRequirements(opts: ResourceRouteOptions): RouteRequirement[] {
+	const { resource, basePath, load } = opts;
 	const categoryLabel = opts.categoryLabel ?? "category";
 	const staticManaged = new Set(opts.managedCategories ?? []);
 	const isManaged = opts.isManaged ?? ((category: string) => staticManaged.has(category));
 
-	// Surface the document's labels as authz attrs. The resolver matches
+	// Surface the record's labels as authz attrs. The resolver matches
 	// role.category against attrs.category and each role.scope dimension key
-	// against attrs[key], so the scope dimensions are just the document's own
-	// label keys (e.g. "workplace") — no per-agent scope config needed.
+	// against attrs[key], so scope dimensions are just the record's own label
+	// keys (e.g. "workplace") — no per-agent scope config needed.
 	const toAttrs = (labels: Record<string, string>) => {
 		const attrs: Record<string, string> = { ...labels };
 		const category = labels[categoryLabel];
@@ -56,31 +56,31 @@ export function buildDocumentRouteRequirements(opts: DocumentRouteOptions = {}):
 	const attrsFromBody = (req: DocReq) => {
 		const labels = (req.body as { labels?: Record<string, string> })?.labels ?? {};
 		const category = labels[categoryLabel];
-		// Non-managed (personal) documents: not gated — owner creates their own.
+		// Non-managed (personal) records: not gated — owner creates their own.
 		if (!category || !isManaged(category)) return "skip" as const;
 		return toAttrs(labels);
 	};
 
 	const routes: RouteRequirement[] = [
-		{ method: "GET", path: "/api/document", resource: "document", action: "read", mode: "list" },
-		{ method: "POST", path: "/api/document", resource: "document", action: "write", mode: "fromBody", bodyAttrs: attrsFromBody },
+		{ method: "GET", path: basePath, resource, action: "read", mode: "list" },
+		{ method: "POST", path: basePath, resource, action: "write", mode: "fromBody", bodyAttrs: attrsFromBody },
 	];
 
-	if (documentMemory) {
-		const attrsOfDoc = async (req: DocReq) => {
+	if (load) {
+		const attrsOfRecord = async (req: DocReq) => {
 			// The authz middleware runs at the /api mount, before the inner ":id"
 			// route matches, so req.params is empty here. Derive the id from the URL
-			// path (last segment of /api/document/:id, /update/:id, /delete/:id).
+			// path (last segment of :id / update/:id / delete/:id).
 			const id = `${req.baseUrl}${req.path}`.split("/").filter(Boolean).pop();
 			if (!id) return null;
-			const doc = await documentMemory.getDocument(id);
-			if (!doc) return null;
-			return toAttrs((doc.labels ?? {}) as Record<string, string>);
+			const rec = await load(id);
+			if (!rec) return null;
+			return toAttrs((rec.labels ?? {}) as Record<string, string>);
 		};
 		routes.push(
-			{ method: "GET", path: "/api/document/:id", resource: "document", action: "read", mode: "byId", loadAttrs: attrsOfDoc },
-			{ method: "POST", path: "/api/document/update/:id", resource: "document", action: "write", mode: "byId", loadAttrs: attrsOfDoc },
-			{ method: "POST", path: "/api/document/delete/:id", resource: "document", action: "write", mode: "byId", loadAttrs: attrsOfDoc },
+			{ method: "GET", path: `${basePath}/:id`, resource, action: "read", mode: "byId", loadAttrs: attrsOfRecord },
+			{ method: "POST", path: `${basePath}/update/:id`, resource, action: "write", mode: "byId", loadAttrs: attrsOfRecord },
+			{ method: "POST", path: `${basePath}/delete/:id`, resource, action: "write", mode: "byId", loadAttrs: attrsOfRecord },
 		);
 	}
 

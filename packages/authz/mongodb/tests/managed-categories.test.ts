@@ -1,6 +1,8 @@
 import { managedCategoriesFromRoles } from "../implements/mongo-authz";
-import { buildDocumentRouteRequirements } from "../implements/route-requirements";
+import { buildResourceRouteRequirements } from "../implements/route-requirements";
 import type { Action, Role } from "../implements/types";
+
+const DOC = { resource: "document", basePath: "/api/document" } as const;
 
 function role(name: string, category: string | undefined, actions: Action[]): Role {
 	return {
@@ -45,7 +47,7 @@ describe("managedCategoriesFromRoles", () => {
 
 describe("buildDocumentRouteRequirements create-gating", () => {
 	const bodyAttrsOf = (isManaged: (c: string) => boolean) => {
-		const routes = buildDocumentRouteRequirements({ isManaged });
+		const routes = buildResourceRouteRequirements({ ...DOC, isManaged });
 		const post = routes.find((r) => r.method === "POST" && r.path === "/api/document");
 		return post?.bodyAttrs as (r: unknown) => unknown;
 	};
@@ -62,20 +64,28 @@ describe("buildDocumentRouteRequirements create-gating", () => {
 	});
 });
 
-describe("documentMemory is optional", () => {
-	const paths = (routes: ReturnType<typeof buildDocumentRouteRequirements>) =>
+describe("byId routes are gated on a loader (load)", () => {
+	const paths = (routes: ReturnType<typeof buildResourceRouteRequirements>) =>
 		routes.map((r) => `${r.method} ${r.path}`);
 
-	it("omits update/delete/read-byId routes when documentMemory is absent", () => {
-		const p = paths(buildDocumentRouteRequirements({}));
+	it("omits update/delete/read-byId routes when no loader is supplied", () => {
+		const p = paths(buildResourceRouteRequirements({ ...DOC }));
 		expect(p).toEqual(["GET /api/document", "POST /api/document"]); // list + create only
 	});
 
-	it("adds byId routes when documentMemory is supplied", () => {
-		const dm = { getDocument: async () => null } as never;
-		const p = paths(buildDocumentRouteRequirements({ documentMemory: dm }));
+	it("adds byId routes when a loader is supplied", () => {
+		const p = paths(buildResourceRouteRequirements({ ...DOC, load: async () => null }));
 		expect(p).toContain("POST /api/document/update/:id");
 		expect(p).toContain("POST /api/document/delete/:id");
 		expect(p).toContain("GET /api/document/:id");
+	});
+
+	it("derives byId paths from a custom basePath (e.g. workflow)", () => {
+		const p = paths(
+			buildResourceRouteRequirements({ resource: "workflow", basePath: "/api/workflows", load: async () => null }),
+		);
+		expect(p).toContain("GET /api/workflows");
+		expect(p).toContain("POST /api/workflows/update/:id");
+		expect(p).toContain("POST /api/workflows/delete/:id");
 	});
 });

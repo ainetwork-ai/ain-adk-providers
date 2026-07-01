@@ -44,9 +44,8 @@ describe("managedCategoriesFromRoles", () => {
 });
 
 describe("buildDocumentRouteRequirements create-gating", () => {
-	const dm = { getDocument: async () => null } as never;
 	const bodyAttrsOf = (isManaged: (c: string) => boolean) => {
-		const routes = buildDocumentRouteRequirements(dm, { isManaged });
+		const routes = buildDocumentRouteRequirements({ isManaged });
 		const post = routes.find((r) => r.method === "POST" && r.path === "/api/document");
 		return post?.bodyAttrs as (r: unknown) => unknown;
 	};
@@ -60,5 +59,23 @@ describe("buildDocumentRouteRequirements create-gating", () => {
 		});
 		expect(bodyAttrs(req({ category: "note" }))).toBe("skip"); // personal → not gated
 		expect(bodyAttrs(req({}))).toBe("skip"); // no category → not gated
+	});
+});
+
+describe("documentMemory is optional", () => {
+	const paths = (routes: ReturnType<typeof buildDocumentRouteRequirements>) =>
+		routes.map((r) => `${r.method} ${r.path}`);
+
+	it("omits update/delete/read-byId routes when documentMemory is absent", () => {
+		const p = paths(buildDocumentRouteRequirements({}));
+		expect(p).toEqual(["GET /api/document", "POST /api/document"]); // list + create only
+	});
+
+	it("adds byId routes when documentMemory is supplied", () => {
+		const dm = { getDocument: async () => null } as never;
+		const p = paths(buildDocumentRouteRequirements({ documentMemory: dm }));
+		expect(p).toContain("POST /api/document/update/:id");
+		expect(p).toContain("POST /api/document/delete/:id");
+		expect(p).toContain("GET /api/document/:id");
 	});
 });

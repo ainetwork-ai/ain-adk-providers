@@ -20,9 +20,11 @@ export interface MongoAuthzOptions extends DocumentRouteOptions {
 	/** Mongo connection string for the role/assignment store (roles,
 	 * role_assignments collections). Usually the agent's own memory DB. */
 	connectionString: string;
-	/** The agent's document memory — needed to load a document's labels for
-	 * per-record (byId) authorization. */
-	documentMemory: IDocumentMemory;
+	/** The agent's document memory. Only needed to authorize update/delete of an
+	 * existing document (loads the target's labels to check its category/scope).
+	 * Omit if you only gate creation — create reads labels from the request body
+	 * and reads are open. */
+	documentMemory?: IDocumentMemory;
 	/** Resolver cache TTL in ms (default 30s). */
 	cacheTtlMs?: number;
 	/** Managed-category cache TTL in ms (default 30s). The set of managed
@@ -63,7 +65,8 @@ export class MongoAuthz implements AuthzConfig {
 		this.resolver = new RoleResolver(this.store, { cacheTtlMs: opts.cacheTtlMs });
 		this.staticManaged = new Set(opts.managedCategories ?? []);
 		this.managedTtl = opts.managedCacheTtlMs ?? 30_000;
-		this.routes = buildDocumentRouteRequirements(opts.documentMemory, {
+		this.routes = buildDocumentRouteRequirements({
+			documentMemory: opts.documentMemory,
 			categoryLabel: opts.categoryLabel,
 			isManaged: (category) => this.isManaged(category),
 		});

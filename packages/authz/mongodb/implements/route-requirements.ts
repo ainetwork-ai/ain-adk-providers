@@ -7,12 +7,17 @@ import type { RouteRequirement } from "@ainetwork/adk/types/authz";
 type DocReq = { baseUrl: string; path: string; body?: unknown };
 
 export interface DocumentRouteOptions {
-	/** Categories that are "managed": creating one requires a matching write
-	 * role. Other documents are personal and freely creatable by their owner.
-	 * Default: [] (nothing gated on create). The consumer supplies its own set. */
-	managedCategories?: string[];
 	/** Document label key holding the category. Default: "category". */
 	categoryLabel?: string;
+	/** Predicate deciding whether a document category is "managed": creating one
+	 * requires a matching write role. Other (personal) documents are freely
+	 * creatable by their owner. Called synchronously per create request, so it
+	 * must read from a cache. MongoAuthz supplies one derived from the roles in
+	 * the DB (a category with a write role is managed), so new categories need no
+	 * restart. Default: nothing is managed. */
+	isManaged?: (category: string) => boolean;
+	/** Static fallback used only when `isManaged` is not supplied. */
+	managedCategories?: string[];
 }
 
 /**
@@ -28,7 +33,8 @@ export function buildDocumentRouteRequirements(
 	opts: DocumentRouteOptions = {},
 ): RouteRequirement[] {
 	const categoryLabel = opts.categoryLabel ?? "category";
-	const managed = new Set(opts.managedCategories ?? []);
+	const staticManaged = new Set(opts.managedCategories ?? []);
+	const isManaged = opts.isManaged ?? ((category: string) => staticManaged.has(category));
 
 	// Surface the document's labels as authz attrs. The resolver matches
 	// role.category against attrs.category and each role.scope dimension key
@@ -56,7 +62,7 @@ export function buildDocumentRouteRequirements(
 		const labels = (req.body as { labels?: Record<string, string> })?.labels ?? {};
 		const category = labels[categoryLabel];
 		// Non-managed (personal) documents: not gated — owner creates their own.
-		if (!category || !managed.has(category)) return "skip" as const;
+		if (!category || !isManaged(category)) return "skip" as const;
 		return toAttrs(labels);
 	};
 

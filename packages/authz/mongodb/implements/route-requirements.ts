@@ -25,6 +25,11 @@ export interface ResourceRouteOptions {
 	isManaged?: (category: string) => boolean;
 	/** Static fallback used only when `isManaged` is not supplied. */
 	managedCategories?: string[];
+	/** Extra write sub-actions on an existing record, relative to `${basePath}/:id`,
+	 * e.g. ["advice/stream", "slots/:slotId/fill/stream"]. Each becomes a byId
+	 * write route at `${basePath}/:id/${subpath}` gated by the target's scope
+	 * (same as update/delete). Requires `load`. */
+	byIdWriteSubpaths?: string[];
 }
 
 /**
@@ -69,23 +74,34 @@ export function buildResourceRouteRequirements(opts: ResourceRouteOptions): Rout
 		{ method: "GET", path: `${basePath}/:id`, resource, action: "read", mode: "byId", loadAttrs: async () => ({}) },
 	];
 
-	// update/delete gate on the target's category/scope, which requires loading
-	// the stored record. Without a loader they fall back to the owner check.
+	// update/delete (and any extra byId write sub-actions) gate on the target's
+	// category/scope, which requires loading the stored record. Without a loader
+	// they fall back to the owner check.
 	if (load) {
-		const attrsOfRecord = async (req: DocReq) => {
-			// The authz middleware runs at the /api mount, before the inner ":id"
-			// route matches, so req.params is empty here. Derive the id from the URL
-			// path (last segment of update/:id / delete/:id).
-			const id = `${req.baseUrl}${req.path}`.split("/").filter(Boolean).pop();
-			if (!id) return null;
-			const rec = await load(id);
-			if (!rec) return null;
-			return toAttrs((rec.labels ?? {}) as Record<string, string>);
+		// The authz middleware runs at the /api mount, before the inner route
+		// matches, so req.params is empty. Derive the id from the URL by the
+		// position of ":id" in each route's own template — the id is not always
+		// the last segment (e.g. `/:id/slots/:slotId/fill/stream`).
+		const loadAttrsFor = (pathTemplate: string) => {
+			const idIndex = pathTemplate.split("/").filter(Boolean).indexOf(":id");
+			return async (req: DocReq) => {
+				const parts = `${req.baseUrl}${req.path}`.split("/").filter(Boolean);
+				const id = idIndex >= 0 ? parts[idIndex] : undefined;
+				if (!id) return null;
+				const rec = await load(id);
+				if (!rec) return null;
+				return toAttrs((rec.labels ?? {}) as Record<string, string>);
+			};
 		};
-		routes.push(
-			{ method: "POST", path: `${basePath}/update/:id`, resource, action: "write", mode: "byId", loadAttrs: attrsOfRecord },
-			{ method: "POST", path: `${basePath}/delete/:id`, resource, action: "write", mode: "byId", loadAttrs: attrsOfRecord },
-		);
+
+		const writePaths = [
+			`${basePath}/update/:id`,
+			`${basePath}/delete/:id`,
+			...(opts.byIdWriteSubpaths ?? []).map((sub) => `${basePath}/:id/${sub}`),
+		];
+		for (const path of writePaths) {
+			routes.push({ method: "POST", path, resource, action: "write", mode: "byId", loadAttrs: loadAttrsFor(path) });
+		}
 	}
 
 	return routes;

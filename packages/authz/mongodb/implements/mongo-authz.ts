@@ -84,6 +84,10 @@ export class MongoAuthz implements AuthzConfig {
 				resource: "document",
 				basePath: "/api/document",
 				load: mem ? (id) => mem.getDocument(id).then((d) => d ?? null) : undefined,
+				// Sub-actions on an existing document (generate advice, fill a data
+				// slot) are gated like a write on that document — only holders of a
+				// write role for its scope (or the owner) may invoke them.
+				byIdWriteSubpaths: ["slots/:slotId/fill", "slots/:slotId/fill/stream", "advice/stream"],
 			};
 		} else {
 			resolved = spec;

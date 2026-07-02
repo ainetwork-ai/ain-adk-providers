@@ -122,4 +122,45 @@ describe("byId routes", () => {
 		expect(p).toContain("POST /api/workflows/update/:id");
 		expect(p).toContain("POST /api/workflows/delete/:id");
 	});
+
+	it("registers byIdWriteSubpaths as byId write routes under :id", () => {
+		const p = paths(
+			buildResourceRouteRequirements({
+				...DOC,
+				load: async () => null,
+				byIdWriteSubpaths: ["advice/stream", "slots/:slotId/fill/stream"],
+			}),
+		);
+		expect(p).toContain("POST /api/document/:id/advice/stream");
+		expect(p).toContain("POST /api/document/:id/slots/:slotId/fill/stream");
+	});
+
+	it("extracts the record id by :id position, not the last segment (deep subpath)", async () => {
+		const seen: string[] = [];
+		const routes = buildResourceRouteRequirements({
+			...DOC,
+			load: async (id) => {
+				seen.push(id);
+				return { labels: { workplace: id } };
+			},
+			byIdWriteSubpaths: ["slots/:slotId/fill/stream"],
+		});
+		const fill = routes.find((r) => r.path === "/api/document/:id/slots/:slotId/fill/stream");
+		const attrs = await (fill?.loadAttrs as (r: unknown) => Promise<unknown>)({
+			baseUrl: "/api",
+			path: "/document/DOC1/slots/S1/fill/stream",
+		});
+		expect(seen).toContain("DOC1"); // not "stream"
+		expect(attrs).toEqual({ workplace: "DOC1" });
+	});
+
+	it("still extracts id for update/delete (verb-before-id shape)", async () => {
+		const routes = buildResourceRouteRequirements({ ...DOC, load: async (id) => ({ labels: { workplace: id } }) });
+		const upd = routes.find((r) => r.path === "/api/document/update/:id");
+		const attrs = await (upd?.loadAttrs as (r: unknown) => Promise<unknown>)({
+			baseUrl: "/api",
+			path: "/document/update/DOC9",
+		});
+		expect(attrs).toEqual({ workplace: "DOC9" });
+	});
 });

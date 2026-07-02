@@ -64,13 +64,18 @@ export function buildResourceRouteRequirements(opts: ResourceRouteOptions): Rout
 	const routes: RouteRequirement[] = [
 		{ method: "GET", path: basePath, resource, action: "read", mode: "list" },
 		{ method: "POST", path: basePath, resource, action: "write", mode: "fromBody", bodyAttrs: attrsFromBody },
+		// Reading a single record is open (the resolver opens reads), so we grant
+		// cross-user access without loading the record — no storage hit needed.
+		{ method: "GET", path: `${basePath}/:id`, resource, action: "read", mode: "byId", loadAttrs: async () => ({}) },
 	];
 
+	// update/delete gate on the target's category/scope, which requires loading
+	// the stored record. Without a loader they fall back to the owner check.
 	if (load) {
 		const attrsOfRecord = async (req: DocReq) => {
 			// The authz middleware runs at the /api mount, before the inner ":id"
 			// route matches, so req.params is empty here. Derive the id from the URL
-			// path (last segment of :id / update/:id / delete/:id).
+			// path (last segment of update/:id / delete/:id).
 			const id = `${req.baseUrl}${req.path}`.split("/").filter(Boolean).pop();
 			if (!id) return null;
 			const rec = await load(id);
@@ -78,7 +83,6 @@ export function buildResourceRouteRequirements(opts: ResourceRouteOptions): Rout
 			return toAttrs((rec.labels ?? {}) as Record<string, string>);
 		};
 		routes.push(
-			{ method: "GET", path: `${basePath}/:id`, resource, action: "read", mode: "byId", loadAttrs: attrsOfRecord },
 			{ method: "POST", path: `${basePath}/update/:id`, resource, action: "write", mode: "byId", loadAttrs: attrsOfRecord },
 			{ method: "POST", path: `${basePath}/delete/:id`, resource, action: "write", mode: "byId", loadAttrs: attrsOfRecord },
 		);

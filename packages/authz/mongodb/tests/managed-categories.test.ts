@@ -1,14 +1,15 @@
-import { managedCategoriesFromRoles } from "../implements/mongo-authz";
+import { ManagedCategoryCache, managedCategoriesFromRoles } from "../implements/managed-cache";
 import { buildResourceRouteRequirements } from "../implements/route-requirements";
 import type { Action, Role } from "../implements/types";
 
 const DOC = { resource: "document", basePath: "/api/document" } as const;
+const flush = () => new Promise((r) => setImmediate(r));
 
-function role(name: string, category: string | undefined, actions: Action[]): Role {
+function role(name: string, category: string | undefined, actions: Action[], resource = "document"): Role {
 	return {
 		roleId: name,
 		name,
-		resource: "document",
+		resource,
 		actions,
 		category,
 		scope: [],
@@ -18,34 +19,62 @@ function role(name: string, category: string | undefined, actions: Action[]): Ro
 }
 
 describe("managedCategoriesFromRoles", () => {
-	it("derives categories that have a write role", () => {
-		const set = managedCategoriesFromRoles([
-			role("logbook-mgr", "logbook", ["read", "write"]),
-			role("report-viewer", "report", ["read"]), // read-only → not managed
-			role("global-writer", undefined, ["write"]), // no category → not managed
-		]);
+	it("derives categories that have a write role for the resource", () => {
+		const set = managedCategoriesFromRoles(
+			[
+				role("logbook-mgr", "logbook", ["read", "write"]),
+				role("report-viewer", "report", ["read"]), // read-only → not managed
+				role("global-writer", undefined, ["write"]), // no category → not managed
+			],
+			"document",
+		);
 		expect(set.has("logbook")).toBe(true);
 		expect(set.has("report")).toBe(false);
 		expect(set.size).toBe(1);
 	});
 
-	it("picks up a new category as soon as it has a write role (no restart)", () => {
-		const before = managedCategoriesFromRoles([role("logbook-mgr", "logbook", ["write"])]);
-		expect(before.has("schedule")).toBe(false);
-		const after = managedCategoriesFromRoles([
-			role("logbook-mgr", "logbook", ["write"]),
-			role("schedule-mgr", "schedule", ["write"]),
-		]);
-		expect(after.has("schedule")).toBe(true);
+	it("filters by resource (a workflow role does not manage a document category)", () => {
+		const roles = [role("sched", "schedule", ["write"], "workflow")];
+		expect(managedCategoriesFromRoles(roles, "workflow").has("schedule")).toBe(true);
+		expect(managedCategoriesFromRoles(roles, "document").has("schedule")).toBe(false);
+	});
+
+	it("counts resource '*' roles for every resource", () => {
+		const roles = [role("super", "logbook", ["write"], "*")];
+		expect(managedCategoriesFromRoles(roles, "document").has("logbook")).toBe(true);
+		expect(managedCategoriesFromRoles(roles, "workflow").has("logbook")).toBe(true);
 	});
 
 	it("unions extra static categories", () => {
-		const set = managedCategoriesFromRoles([], ["announcement"]);
+		const set = managedCategoriesFromRoles([], "document", ["announcement"]);
 		expect(set.has("announcement")).toBe(true);
 	});
 });
 
-describe("buildDocumentRouteRequirements create-gating", () => {
+describe("ManagedCategoryCache", () => {
+	it("fails closed (treats as managed) before the first load completes", () => {
+		const cache = new ManagedCategoryCache(() => new Promise(() => {})); // never resolves
+		expect(cache.isManaged("document", "anything")).toBe(true);
+	});
+
+	it("reflects derived categories after the load resolves", async () => {
+		const cache = new ManagedCategoryCache(async () => [role("m", "logbook", ["write"])]);
+		cache.prime();
+		await flush();
+		expect(cache.isManaged("document", "logbook")).toBe(true);
+		expect(cache.isManaged("document", "note")).toBe(false);
+	});
+
+	it("scopes the managed set per resource", async () => {
+		const cache = new ManagedCategoryCache(async () => [role("w", "schedule", ["write"], "workflow")]);
+		cache.prime();
+		await flush();
+		expect(cache.isManaged("workflow", "schedule")).toBe(true);
+		expect(cache.isManaged("document", "schedule")).toBe(false);
+	});
+});
+
+describe("buildResourceRouteRequirements create-gating", () => {
 	const bodyAttrsOf = (isManaged: (c: string) => boolean) => {
 		const routes = buildResourceRouteRequirements({ ...DOC, isManaged });
 		const post = routes.find((r) => r.method === "POST" && r.path === "/api/document");
@@ -64,27 +93,32 @@ describe("buildDocumentRouteRequirements create-gating", () => {
 	});
 });
 
-describe("byId routes are gated on a loader (load)", () => {
+describe("byId routes", () => {
 	const paths = (routes: ReturnType<typeof buildResourceRouteRequirements>) =>
 		routes.map((r) => `${r.method} ${r.path}`);
 
-	it("omits update/delete/read-byId routes when no loader is supplied", () => {
+	it("registers list + create + open read-byId even without a loader", () => {
 		const p = paths(buildResourceRouteRequirements({ ...DOC }));
-		expect(p).toEqual(["GET /api/document", "POST /api/document"]); // list + create only
+		expect(p).toEqual(["GET /api/document", "POST /api/document", "GET /api/document/:id"]);
 	});
 
-	it("adds byId routes when a loader is supplied", () => {
+	it("read-byId does not load the record (read is open)", async () => {
+		const routes = buildResourceRouteRequirements({ ...DOC });
+		const read = routes.find((r) => r.method === "GET" && r.path === "/api/document/:id");
+		const loadAttrs = read?.loadAttrs as (r: unknown) => Promise<unknown>;
+		expect(await loadAttrs({ baseUrl: "/api", path: "/document/abc" })).toEqual({});
+	});
+
+	it("adds update/delete byId routes only when a loader is supplied", () => {
 		const p = paths(buildResourceRouteRequirements({ ...DOC, load: async () => null }));
 		expect(p).toContain("POST /api/document/update/:id");
 		expect(p).toContain("POST /api/document/delete/:id");
-		expect(p).toContain("GET /api/document/:id");
 	});
 
 	it("derives byId paths from a custom basePath (e.g. workflow)", () => {
 		const p = paths(
 			buildResourceRouteRequirements({ resource: "workflow", basePath: "/api/workflows", load: async () => null }),
 		);
-		expect(p).toContain("GET /api/workflows");
 		expect(p).toContain("POST /api/workflows/update/:id");
 		expect(p).toContain("POST /api/workflows/delete/:id");
 	});

@@ -1,20 +1,11 @@
 import type { MemoryModule } from "@ainetwork/adk/modules";
 import type { AuthzConfig, PermissionResolver, RouteRequirement } from "@ainetwork/adk/types/authz";
 import mongoose from "mongoose";
+import { ManagedCategoryCache } from "./managed-cache";
 import { MongoRoleStore } from "./mongo-role-store";
 import { RoleResolver } from "./role-resolver";
 import { buildResourceRouteRequirements, type ResourceRouteOptions } from "./route-requirements";
-import type { Role, RoleStore } from "./types";
-
-/** Categories governed by a write role are "managed" (their creation is gated).
- * `extra` is an optional static set unioned in for categories with no role yet. */
-export function managedCategoriesFromRoles(roles: Role[], extra?: Iterable<string>): Set<string> {
-	const set = new Set<string>(extra ?? []);
-	for (const r of roles) {
-		if (r.category && r.actions.includes("write")) set.add(r.category);
-	}
-	return set;
-}
+import type { RoleStore } from "./types";
 
 /** A resource to protect: a built-in ADK resource name (routes + byId loader
  * derived from the MemoryModule) or a full custom spec. */
@@ -63,65 +54,44 @@ export class MongoAuthz implements AuthzConfig {
 	readonly routes: RouteRequirement[];
 
 	private store: RoleStore;
-	private staticManaged: Set<string>;
-	private managedTtl: number;
-	private managedSet = new Set<string>();
-	private managedAt = 0;
-	private managedPrimed = false;
+	private managed: ManagedCategoryCache;
 
 	constructor(opts: MongoAuthzOptions) {
 		const conn = mongoose.createConnection(opts.connectionString);
 		this.store = new MongoRoleStore(conn);
 		this.resolver = new RoleResolver(this.store, { cacheTtlMs: opts.cacheTtlMs });
-		this.staticManaged = new Set(opts.managedCategories ?? []);
-		this.managedTtl = opts.managedCacheTtlMs ?? 30_000;
+		this.managed = new ManagedCategoryCache(
+			() => this.store.listRoles(),
+			opts.managedCacheTtlMs ?? 30_000,
+			opts.managedCategories ?? [],
+		);
 
 		const specs = opts.resources ?? ["document"];
 		this.routes = specs.flatMap((spec) => buildResourceRouteRequirements(this.resolveSpec(spec, opts)));
 
 		// Prime the managed-category cache so the first create is gated correctly.
-		this.refreshManaged();
+		this.managed.prime();
 	}
 
 	/** Resolve a resource spec to full route options: inject the shared managed
-	 * predicate + categoryLabel, and derive built-in loaders from the MemoryModule. */
+	 * predicate (bound to this resource) + categoryLabel, and derive built-in
+	 * loaders from the MemoryModule. A custom spec's own fields win. */
 	private resolveSpec(spec: ResourceSpec, opts: MongoAuthzOptions): ResourceRouteOptions {
-		const base = {
-			categoryLabel: opts.categoryLabel,
-			isManaged: (c: string) => this.isManaged(c),
-		};
+		let resolved: ResourceRouteOptions;
 		if (spec === "document") {
 			const mem = opts.memoryModule?.getDocumentMemory();
-			return {
-				...base,
+			resolved = {
 				resource: "document",
 				basePath: "/api/document",
 				load: mem ? (id) => mem.getDocument(id).then((d) => d ?? null) : undefined,
 			};
+		} else {
+			resolved = spec;
 		}
-		// custom spec: its own fields win over the shared defaults
-		return { ...base, ...spec };
-	}
-
-	/** Categories governed by a write role are "managed" (creation is gated). */
-	private refreshManaged(): void {
-		this.store
-			.listRoles()
-			.then((roles) => {
-				this.managedSet = managedCategoriesFromRoles(roles, this.staticManaged);
-				this.managedAt = Date.now();
-				this.managedPrimed = true;
-			})
-			.catch(() => {
-				// keep the previous cache; a transient DB error shouldn't flap policy
-			});
-	}
-
-	private isManaged(category: string): boolean {
-		if (Date.now() - this.managedAt > this.managedTtl) this.refreshManaged(); // non-blocking
-		// Fail closed until the first load completes: treat unknown as managed so a
-		// governed category can't slip through a cold-start window.
-		if (!this.managedPrimed) return true;
-		return this.managedSet.has(category);
+		return {
+			categoryLabel: opts.categoryLabel,
+			isManaged: (c: string) => this.managed.isManaged(resolved.resource, c),
+			...resolved,
+		};
 	}
 }

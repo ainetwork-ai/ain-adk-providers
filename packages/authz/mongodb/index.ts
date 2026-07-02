@@ -6,6 +6,7 @@
 // lines instead of duplicating this code.
 export * from "./implements/types";
 export * from "./implements/role-resolver";
+export * from "./implements/managed-cache";
 export * from "./implements/mongo-role-store";
 export * from "./implements/inmemory-role-store";
 export * from "./implements/route-requirements";

@@ -3,7 +3,9 @@
   "version": "0.7.1",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,11 +25,13 @@
     "mongoose": "^8.16.5"
   },
   "peerDependencies": {
-    "@ainetwork/adk": "^0.7.1"
+    "@ainetwork/adk": "^0.7.2"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
   },
   "license": "MIT",
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }

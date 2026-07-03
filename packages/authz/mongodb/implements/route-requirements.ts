@@ -94,13 +94,26 @@ export function buildResourceRouteRequirements(opts: ResourceRouteOptions): Rout
 			};
 		};
 
+		const updatePath = `${basePath}/update/:id`;
 		const writePaths = [
-			`${basePath}/update/:id`,
+			updatePath,
 			`${basePath}/delete/:id`,
 			...(opts.byIdWriteSubpaths ?? []).map((sub) => `${basePath}/:id/${sub}`),
 		];
 		for (const path of writePaths) {
-			routes.push({ method: "POST", path, resource, action: "write", mode: "byId", loadAttrs: loadAttrsFor(path) });
+			routes.push({
+				method: "POST",
+				path,
+				resource,
+				action: "write",
+				mode: "byId",
+				loadAttrs: loadAttrsFor(path),
+				// Update can change labels: also gate the target state so a caller
+				// can't relabel a personal record into a governed category/scope they
+				// lack a role for (create-then-relabel bypass). Non-managed targets
+				// return "skip" and aren't gated. delete / sub-actions don't relabel.
+				...(path === updatePath ? { bodyAttrs: attrsFromBody } : {}),
+			});
 		}
 	}
 

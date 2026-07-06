@@ -9,10 +9,10 @@
   dependencies:
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.7.1":
-  version "0.7.1"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.7.1.tgz#1b92b4f675b4448584f0c83287484f3c8cd2967d"
-  integrity sha512-TYrVy1FZeDsuYrHdJxe8fhNm96vFIxCWMW05ukGKdWKQRqmM0czGR4GyOX6lMfqReHWu6h9rA/cNIsKqswTrtA==
+"@ainetwork/adk@^0.7.2":
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.7.2.tgz#e2241dde047cd4ad661c5ce137f335569f72e577"
+  integrity sha512-CCF2VVdRvmc0I1fchvlA3x5AJ0yBtDwAVEbfrFuOjz/XeNVORtQXrFbpn99Hh5fjSXH0Bo9fUpBs+unNFF178A==
   dependencies:
     "@a2a-js/sdk" "^0.3.7"
     "@modelcontextprotocol/sdk" "^1.25.1"

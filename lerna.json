@@ -5,6 +5,7 @@
     "packages/memory/*",
     "packages/models/*",
     "packages/auth/*",
+    "packages/authz/*",
     "examples/*"
   ],
   "npmClient": "yarn",

@@ -85,9 +85,17 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		const sessionContent: CCMessageParam[] = !thread
 			? []
 			: thread.messages.map((message: MessageObject) => {
+					// Prefer the real query stashed in metadata when a display text was
+					// shown in its place (displayQuery), so multi-turn history carries
+					// the actual query the model saw on the first turn — not the short
+					// label. Falls back to the stored content otherwise.
+					const content =
+						typeof message.metadata?.query === "string"
+							? message.metadata.query
+							: (message.content.parts[0] as string);
 					return {
 						role: this.getMessageRole(message.role),
-						content: message.content.parts[0] as string,
+						content,
 					};
 				});
 		const userContent: CCMessageParam = { role: "user", content: query };

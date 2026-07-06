@@ -64,9 +64,17 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 			? []
 			: thread.messages.map((message: MessageObject) => {
 					// TODO: check message.content.type
+					// Prefer the real query stashed in metadata when a display text was
+					// shown in its place (displayQuery), so multi-turn history carries
+					// the actual query the model saw on the first turn — not the short
+					// label. Falls back to the stored content otherwise.
+					const text =
+						typeof message.metadata?.query === "string"
+							? message.metadata.query
+							: (message.content.parts[0] as string);
 					return {
 						role: this.getMessageRole(message.role),
-						parts: [{ text: message.content.parts[0] as string }],
+						parts: [{ text }],
 					};
 				});
 		const userContent: Content = { role: "user", parts: [{ text: query }] };

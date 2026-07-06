@@ -22,7 +22,9 @@ interface AzureADTokenPayload {
   tid?: string;
   appid?: string;
   azp?: string;
-  preferred_username?: string;
+  userPrincipalName?: string; // explicit UPN claim when present
+  upn?: string; // userPrincipalName (Azure AD v1.0 tokens)
+  preferred_username?: string; // UPN-equivalent in v2.0 tokens
   email?: string;
   name?: string;
 }
@@ -30,6 +32,7 @@ interface AzureADTokenPayload {
 interface NextAuthJWTPayload {
   name?: string;
   email?: string;
+  userPrincipalName?: string; // set by the WISE NextAuth jwt callback
   picture?: string;
   sub: string;
   iat: number;
@@ -141,6 +144,7 @@ export class M365Auth extends AuthModule {
             return {
               isAuthenticated: true,
               userId: payload.sub,
+              email: payload.userPrincipalName || payload.email,
             };
           }
         } catch {
@@ -159,6 +163,9 @@ export class M365Auth extends AuthModule {
       return {
         isAuthenticated: true,
         userId: (payload.oid || payload.sub) as string,
+        // userPrincipalName carries the email. Use it directly if present,
+        // else the UPN-equivalent claim (preferred_username v2.0 / upn v1.0), else email.
+        email: payload.userPrincipalName || payload.preferred_username || payload.upn || payload.email,
       };
     } catch (err) {
       console.error("M365 auth verification failed:", (err as Error).message);

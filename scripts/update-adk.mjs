@@ -2,10 +2,15 @@
 // Updates @ainetwork/adk in the root devDependencies and syncs the version
 // into every workspace package that declares it (peer/dev/dependencies).
 //
+// Package-manager agnostic: it only resolves the target version from the npm
+// registry and edits package.json files. It does NOT run an install — run your
+// own afterwards (pnpm install / yarn install) to apply the change.
+//
 // Usage:
-//   yarn update:adk           # bump to latest
-//   yarn update:adk 0.6.3     # bump to a specific version
-//   yarn update:adk latest    # explicit latest
+//   node scripts/update-adk.mjs           # bump to latest
+//   node scripts/update-adk.mjs 0.6.3     # bump to a specific version
+//   node scripts/update-adk.mjs next      # bump to a dist-tag
+//   node scripts/update-adk.mjs "^0.7"    # bump to the highest match of a range
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -20,16 +25,34 @@ const rootPkg = JSON.parse(readFileSync(rootPkgPath, "utf8"));
 
 const versionArg = process.argv[2] || "latest";
 
-// 1. Update the root devDependency (yarn writes a caret range, e.g. ^0.6.3).
-console.log(`> yarn add -W -D ${PKG}@${versionArg}`);
-execSync(`yarn add -W -D ${PKG}@${versionArg}`, { stdio: "inherit" });
-
-// 2. Read back the range yarn resolved so sub-packages stay in sync.
-const resolved = JSON.parse(readFileSync(rootPkgPath, "utf8")).devDependencies[PKG];
-if (!resolved) {
-  console.error(`Could not find ${PKG} in root devDependencies after install.`);
+// 1. Resolve the tag/version/range to a concrete version via the npm registry.
+//    --json normalizes the output: a single match is a string, multiple matches
+//    (e.g. for a range) are an array in ascending order — take the highest.
+console.log(`> npm view ${PKG}@${versionArg} version`);
+let resolved;
+try {
+  const out = execSync(`npm view ${PKG}@${versionArg} version --json`, {
+    encoding: "utf8",
+  }).trim();
+  const parsed = JSON.parse(out);
+  resolved = Array.isArray(parsed) ? parsed[parsed.length - 1] : parsed;
+} catch (err) {
+  console.error(`Could not resolve ${PKG}@${versionArg} from the registry.`);
+  console.error(err.stderr?.toString() || err.message);
   process.exit(1);
 }
+if (!resolved) {
+  console.error(`No published version matched ${PKG}@${versionArg}.`);
+  process.exit(1);
+}
+
+// Write a caret range (matching the previous `yarn add` default behavior).
+const range = `^${resolved}`;
+
+// 2. Update the root devDependency.
+rootPkg.devDependencies ??= {};
+rootPkg.devDependencies[PKG] = range;
+writeFileSync(rootPkgPath, `${JSON.stringify(rootPkg, null, 2)}\n`);
 
 // 3. Expand workspace globs (only single-level `dir/*` is used here).
 function expandWorkspaces(patterns) {
@@ -58,17 +81,27 @@ for (const dir of expandWorkspaces(rootPkg.workspaces || [])) {
   const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
   let changed = false;
   for (const field of FIELDS) {
-    if (pkg[field]?.[PKG] && pkg[field][PKG] !== resolved) {
-      pkg[field][PKG] = resolved;
+    if (pkg[field]?.[PKG] && pkg[field][PKG] !== range) {
+      pkg[field][PKG] = range;
       changed = true;
     }
   }
 
   if (changed) {
     writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-    console.log(`  synced ${pkg.name} -> ${PKG}@${resolved}`);
+    console.log(`  synced ${pkg.name} -> ${PKG}@${range}`);
     count++;
   }
 }
 
-console.log(`\nDone. Root + ${count} workspace package(s) now on ${PKG}@${resolved}.`);
+// 5. Pick an install hint from whichever lockfile is present.
+const installHint = existsSync(path.join(root, "pnpm-lock.yaml"))
+  ? "pnpm install"
+  : existsSync(path.join(root, "yarn.lock"))
+    ? "yarn install"
+    : "pnpm install (or your package manager's install)";
+
+console.log(
+  `\nDone. Root + ${count} workspace package(s) now target ${PKG}@${range}.`,
+);
+console.log(`Run \`${installHint}\` to apply the change to node_modules.`);

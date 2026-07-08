@@ -82,6 +82,41 @@ export class RoleResolver implements PermissionResolver {
 			}
 			if (ok && specified > 0) return true;
 		}
+		// TEMP DIAGNOSTIC (debug/authz-principal-log): log why a write was denied.
+		// Reveals the exact principal (UPN vs stored email, incl. case), whether
+		// any assignment was found for it, and each matched role's resource/actions/
+		// category/scope — enough to tell principal-mismatch from role-misconfig.
+		// REMOVE before merging.
+		console.warn(
+			"[authz-debug] write DENIED",
+			JSON.stringify(
+				{
+					principal,
+					resource,
+					action,
+					attrs,
+					assignmentCount: eff.assignments.length,
+					knownRoleCount: eff.roleById.size,
+					assignments: eff.assignments.map((a) => {
+						const role = eff.roleById.get(a.roleId);
+						return {
+							roleId: a.roleId,
+							assignmentScope: a.scope,
+							roleFound: !!role,
+							role: role && {
+								name: role.name,
+								resource: role.resource,
+								actions: role.actions,
+								category: role.category,
+								scope: role.scope,
+							},
+						};
+					}),
+				},
+				null,
+				2,
+			),
+		);
 		return false;
 	}
 

@@ -49,7 +49,12 @@ export class MongoRoleStore implements RoleStore {
 		return role;
 	}
 	async listAssignmentsByEmail(email: string): Promise<RoleAssignment[]> {
-		return this.Assignment.find({ email }).lean<RoleAssignment[]>();
+		// Case-insensitive, whitespace-tolerant match: the principal (M365 UPN)
+		// case can differ from the stored email, and existing rows aren't
+		// guaranteed lowercased (so we match by anchored, escaped, /i regex rather
+		// than assuming normalized storage).
+		const escaped = email.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		return this.Assignment.find({ email: { $regex: `^${escaped}$`, $options: "i" } }).lean<RoleAssignment[]>();
 	}
 	async createAssignment(a: RoleAssignment): Promise<RoleAssignment> {
 		await this.Assignment.create(a);

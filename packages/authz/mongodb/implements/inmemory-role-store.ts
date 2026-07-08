@@ -12,7 +12,10 @@ export class InMemoryRoleStore implements RoleStore {
 		return role;
 	}
 	async listAssignmentsByEmail(email: string): Promise<RoleAssignment[]> {
-		return [...this.assignments.values()].filter((a) => a.email === email);
+		// Case-insensitive, whitespace-tolerant match: the principal (M365 UPN)
+		// case can differ from the stored email.
+		const norm = email.trim().toLowerCase();
+		return [...this.assignments.values()].filter((a) => a.email.trim().toLowerCase() === norm);
 	}
 	async createAssignment(a: RoleAssignment): Promise<RoleAssignment> {
 		this.assignments.set(a.assignmentId, a);

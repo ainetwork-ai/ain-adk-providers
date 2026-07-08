@@ -72,6 +72,14 @@ describe("RoleResolver", () => {
 		expect(await r.can("boss@x.com", "document", "write", { category: "x", workplace: "y" })).toBe(true);
 	});
 
+	it("matches the principal email case-insensitively", async () => {
+		const r = await fixture();
+		// The M365 UPN (principal) case can differ from the stored assignment email.
+		expect(await r.can("MGR@X.com", "document", "write", { category: "logbook", workplace: "walkerhill" })).toBe(true);
+		expect(await r.can("Boss@X.Com", "document", "write", { category: "x", workplace: "y" })).toBe(true);
+		expect(await r.can("  mgr@x.com  ", "document", "write", { category: "logbook", workplace: "walkerhill" })).toBe(true);
+	});
+
 	it("multi-dimension: every specified dimension must match", async () => {
 		const r = await fixture();
 		expect(await r.can("kit@x.com", "document", "write", { category: "logbook", workplace: "피자힐", section: "주방" })).toBe(true);

@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-auth-m365",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {

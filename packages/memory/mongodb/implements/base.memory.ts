@@ -1,9 +1,10 @@
-import { IAgentMemory, IDocumentMemory, IIntentMemory, IMemory, IUserWorkflowMemory, IThreadMemory, IWorkflowTemplateMemory } from "@ainetwork/adk/modules";
+import { IAgentMemory, IDocumentMemory, IIntentMemory, IMemory, IScheduleRunMemory, IUserWorkflowMemory, IThreadMemory, IWorkflowTemplateMemory } from "@ainetwork/adk/modules";
 import mongoose from "mongoose";
 import { loggers } from "@ainetwork/adk/utils/logger";
 import { MongoDBAgent } from "./agent.memory";
 import { MongoDBDocument } from "./document.memory";
 import { MongoDBIntent } from "./intent.memory";
+import { MongoDBScheduleRun } from "./schedule-run.memory";
 import { MongoDBThread } from "./thread.memory";
 import { MongoDBUserWorkflow } from "./user-workflow.memory";
 import { MongoDBWorkflowTemplate } from "./workflow-template.memory";
@@ -41,6 +42,7 @@ export class MongoDBMemory implements IMemory {
   private workflowTemplateMemory: MongoDBWorkflowTemplate;
   private userWorkflowMemory: MongoDBUserWorkflow;
   private documentMemory: MongoDBDocument;
+  private scheduleRunMemory: MongoDBScheduleRun;
 
   constructor(config: string | MongoDBMemoryConfig) {
     const cfg = typeof config === 'string' ? { uri: config } : config;
@@ -100,6 +102,11 @@ export class MongoDBMemory implements IMemory {
 			this.executeWithRetry.bind(this),
 			this.getOperationTimeout.bind(this)
 		);
+
+		this.scheduleRunMemory = new MongoDBScheduleRun(
+			this.executeWithRetry.bind(this),
+			this.getOperationTimeout.bind(this)
+		);
   }
 
   public getAgentMemory(): IAgentMemory {
@@ -124,6 +131,10 @@ export class MongoDBMemory implements IMemory {
 
   public getDocumentMemory(): IDocumentMemory {
     return this.documentMemory;
+  }
+
+  public getScheduleRunMemory(): IScheduleRunMemory {
+    return this.scheduleRunMemory;
   }
 
   private setupMongooseEventListeners(): void {

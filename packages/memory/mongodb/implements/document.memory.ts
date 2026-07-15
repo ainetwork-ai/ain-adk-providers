@@ -113,4 +113,42 @@ export class MongoDBDocument implements IDocumentMemory {
       return documents;
     }, "listDocuments()");
   }
+
+  public async listAutoRefreshPendingDocuments(): Promise<Document[]> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      return await DocumentModel.find({
+        "autoRefresh.active": true,
+        "autoRefresh.completedAt": { $exists: false },
+      })
+        .maxTimeMS(timeout)
+        .lean<Document[]>();
+    }, "listAutoRefreshPendingDocuments()");
+  }
+
+  public async markAutoRefreshSlotDone(
+    documentId: string,
+    slotId: string
+  ): Promise<void> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      await DocumentModel.updateOne(
+        { documentId },
+        { $addToSet: { "autoRefresh.doneSlotIds": slotId } }
+      ).maxTimeMS(timeout);
+    }, "markAutoRefreshSlotDone()");
+  }
+
+  public async completeAutoRefresh(
+    documentId: string,
+    completedAt: number
+  ): Promise<void> {
+    return this.executeWithRetry(async () => {
+      const timeout = this.getOperationTimeout();
+      await DocumentModel.updateOne(
+        { documentId },
+        { $set: { "autoRefresh.completedAt": completedAt } }
+      ).maxTimeMS(timeout);
+    }, "completeAutoRefresh()");
+  }
 }

@@ -1,5 +1,6 @@
 import {
 	type DocumentAdvice,
+	type DocumentAutoRefresh,
 	DocumentFormat,
 	type DocumentSlot,
 	DocumentSource,
@@ -51,6 +52,12 @@ export const DocumentObjectSchema = new Schema(
 		labels: {
 			type: Schema.Types.Mixed,
 		},
+		// One-shot auto refresh ({ runAt, active, slotIds, doneSlotIds,
+		// completedAt }). Mixed so atomic $addToSet updates aren't stripped
+		// by strict mode.
+		autoRefresh: {
+			type: Schema.Types.Mixed,
+		},
 		source: {
 			type: String,
 			enum: Object.values(DocumentSource),
@@ -98,6 +105,7 @@ export interface DocumentDocument extends Document {
 	slots?: DocumentSlot[];
 	advice?: DocumentAdvice;
 	labels?: Record<string, string>;
+	autoRefresh?: DocumentAutoRefresh | null;
 	source: DocumentSource;
 	workflowId?: string;
 	threadId?: string;

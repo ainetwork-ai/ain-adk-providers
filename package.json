@@ -1,6 +1,7 @@
 {
   "name": "ain-adk-providers",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.33.0",
   "private": true,
   "workspaces": [
     "packages/memory/*",
@@ -27,5 +28,10 @@
     "tsup": "^8.2.3",
     "typescript": "^5.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "pnpm": {
+    "overrides": {
+      "@ainetwork/adk": "file:../ain-adk-v0"
+    }
+  }
 }

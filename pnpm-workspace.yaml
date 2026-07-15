@@ -1,0 +1,6 @@
+packages:
+  - "packages/memory/*"
+  - "packages/models/*"
+  - "packages/auth/*"
+  - "packages/authz/*"
+  - "examples/*"

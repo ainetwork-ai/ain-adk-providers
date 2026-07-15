@@ -9,10 +9,8 @@
   dependencies:
     uuid "^11.1.0"
 
-"@ainetwork/adk@^0.7.4":
-  version "0.7.4"
-  resolved "https://registry.yarnpkg.com/@ainetwork/adk/-/adk-0.7.4.tgz#0447fb753d08f82082a6fa4078cc586b4c46c4e0"
-  integrity sha512-C+bpor91Nzu/uvvMeBGGD53vrTrx5LzUlh8B9in4FFf0Y6594i6ZgBRAONnUpCvGXTbFfhPuBJb8hIlOaKvTLw==
+"@ainetwork/adk@file:../ain-adk-v0":
+  version "0.7.5"
   dependencies:
     "@a2a-js/sdk" "^0.3.7"
     "@modelcontextprotocol/sdk" "^1.25.1"

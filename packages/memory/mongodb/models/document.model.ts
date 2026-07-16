@@ -115,6 +115,14 @@ export interface DocumentDocument extends Document {
 	updatedAt: string;
 }
 
+// 스케줄러 부팅 쿼리(listAutoRefreshPendingDocuments: active=true && completedAt 미존재)용
+// 부분 인덱스 — 예약이 활성인 문서만 인덱싱하므로 전체 문서가 늘어나도 크기가 작게 유지된다.
+// ($exists:false는 partialFilterExpression에 못 쓰므로 active=true로 좁히고 나머지는 스캔.)
+DocumentObjectSchema.index(
+	{ "autoRefresh.active": 1 },
+	{ partialFilterExpression: { "autoRefresh.active": true } }
+);
+
 export const DocumentModel = mongoose.model<DocumentDocument>(
 	"Document",
 	DocumentObjectSchema

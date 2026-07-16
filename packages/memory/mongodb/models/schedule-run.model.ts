@@ -59,6 +59,10 @@ export const ScheduleRunSchema = new Schema(
 	}
 );
 
+// 이력 조회(listScheduleRuns)의 주 패턴인 "jobKey 필터 + startedAt 최신순"을
+// 하나의 인덱스로 커버한다. 이력은 실행마다 쌓이는 무한 성장 컬렉션이라 미리 둔다.
+ScheduleRunSchema.index({ jobKey: 1, startedAt: -1 });
+
 export type ScheduleRunDocument = ScheduleRun & Document;
 
 export const ScheduleRunModel = mongoose.model<ScheduleRunDocument>(

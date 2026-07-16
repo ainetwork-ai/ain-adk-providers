@@ -1,5 +1,6 @@
 import {
 	type DocumentAdvice,
+	type DocumentAutoRefresh,
 	DocumentFormat,
 	type DocumentSlot,
 	DocumentSource,
@@ -51,6 +52,12 @@ export const DocumentObjectSchema = new Schema(
 		labels: {
 			type: Schema.Types.Mixed,
 		},
+		// One-shot auto refresh ({ runAt, active, slotIds, doneSlotIds,
+		// completedAt }). Mixed so atomic $addToSet updates aren't stripped
+		// by strict mode.
+		autoRefresh: {
+			type: Schema.Types.Mixed,
+		},
 		source: {
 			type: String,
 			enum: Object.values(DocumentSource),
@@ -98,6 +105,7 @@ export interface DocumentDocument extends Document {
 	slots?: DocumentSlot[];
 	advice?: DocumentAdvice;
 	labels?: Record<string, string>;
+	autoRefresh?: DocumentAutoRefresh | null;
 	source: DocumentSource;
 	workflowId?: string;
 	threadId?: string;
@@ -106,6 +114,14 @@ export interface DocumentDocument extends Document {
 	createdAt: string;
 	updatedAt: string;
 }
+
+// 스케줄러 부팅 쿼리(listAutoRefreshPendingDocuments: active=true && completedAt 미존재)용
+// 부분 인덱스 — 예약이 활성인 문서만 인덱싱하므로 전체 문서가 늘어나도 크기가 작게 유지된다.
+// ($exists:false는 partialFilterExpression에 못 쓰므로 active=true로 좁히고 나머지는 스캔.)
+DocumentObjectSchema.index(
+	{ "autoRefresh.active": 1 },
+	{ partialFilterExpression: { "autoRefresh.active": true } }
+);
 
 export const DocumentModel = mongoose.model<DocumentDocument>(
 	"Document",

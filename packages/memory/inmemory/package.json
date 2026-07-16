@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@ainetwork/adk": "^0.7.4"
+    "@ainetwork/adk": "^0.7.6"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

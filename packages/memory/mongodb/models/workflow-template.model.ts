@@ -38,6 +38,9 @@ export const WorkflowTemplateObjectSchema = new Schema(
 		variables: {
 			type: Schema.Types.Mixed,
 		},
+		hidden: {
+			type: Boolean,
+		},
 	},
 	{
 		timestamps: true,
@@ -53,6 +56,7 @@ export interface WorkflowTemplateDocument extends Document {
 	content: string;
 	definition?: WorkflowDefinition;
 	variables?: Record<string, WorkflowVariable>;
+	hidden?: boolean;
 }
 
 export const WorkflowTemplateModel = mongoose.model<WorkflowTemplateDocument>(

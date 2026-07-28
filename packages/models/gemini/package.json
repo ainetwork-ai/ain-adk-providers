@@ -24,7 +24,7 @@
     "@google/genai": "^1.11.0"
   },
   "peerDependencies": {
-    "@ainetwork/adk": "^0.7.6"
+    "@ainetwork/adk": "^0.8.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

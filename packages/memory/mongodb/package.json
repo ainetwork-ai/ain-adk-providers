@@ -31,7 +31,7 @@
     "mongoose": "^8.16.5"
   },
   "peerDependencies": {
-    "@ainetwork/adk": "^0.7.6"
+    "@ainetwork/adk": "^0.8.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

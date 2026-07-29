@@ -39,6 +39,10 @@ const IntentObjectSchema = new Schema(
 			enum: ["auto", "required"],
 			required: false,
 		},
+		workflowId: {
+			type: String,
+			required: false,
+		},
 	},
 );
 

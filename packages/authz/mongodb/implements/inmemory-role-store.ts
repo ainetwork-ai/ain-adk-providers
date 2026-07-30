@@ -12,10 +12,14 @@ export class InMemoryRoleStore implements RoleStore {
 		return role;
 	}
 	async listAssignmentsByEmail(email: string): Promise<RoleAssignment[]> {
-		// Case-insensitive, whitespace-tolerant match: the principal (M365 UPN)
-		// case can differ from the stored email.
+		// Mirrors MongoRoleStore: case-insensitive match, trimming ONLY the
+		// principal (M365 UPN case can differ from the stored email). The stored
+		// value is matched raw — the mongo store's anchored /i regex does not
+		// tolerate stored-side whitespace, so neither does this store.
 		const norm = email.trim().toLowerCase();
-		return [...this.assignments.values()].filter((a) => a.email.trim().toLowerCase() === norm);
+		return [...this.assignments.values()].filter(
+			(a) => a.email.toLowerCase() === norm,
+		);
 	}
 	async createAssignment(a: RoleAssignment): Promise<RoleAssignment> {
 		this.assignments.set(a.assignmentId, a);

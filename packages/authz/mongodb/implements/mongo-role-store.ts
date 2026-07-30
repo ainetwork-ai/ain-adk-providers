@@ -1,4 +1,4 @@
-import { Schema, type Connection, type Model } from "mongoose";
+import { type Connection, type Model, Schema } from "mongoose";
 import type { Role, RoleAssignment, RoleStore } from "./types";
 
 const RoleSchema = new Schema<Role>(
@@ -35,10 +35,15 @@ export class MongoRoleStore implements RoleStore {
 	constructor(conn: Connection) {
 		// Register models on the provided connection (avoids clobbering the
 		// memory module's global mongoose models).
-		this.Role = conn.models.Role ?? conn.model<Role>("Role", RoleSchema, "roles");
+		this.Role =
+			conn.models.Role ?? conn.model<Role>("Role", RoleSchema, "roles");
 		this.Assignment =
 			conn.models.RoleAssignment ??
-			conn.model<RoleAssignment>("RoleAssignment", AssignmentSchema, "role_assignments");
+			conn.model<RoleAssignment>(
+				"RoleAssignment",
+				AssignmentSchema,
+				"role_assignments",
+			);
 	}
 
 	async listRoles(): Promise<Role[]> {
@@ -54,7 +59,9 @@ export class MongoRoleStore implements RoleStore {
 		// guaranteed lowercased (so we match by anchored, escaped, /i regex rather
 		// than assuming normalized storage).
 		const escaped = email.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-		return this.Assignment.find({ email: { $regex: `^${escaped}$`, $options: "i" } }).lean<RoleAssignment[]>();
+		return this.Assignment.find({
+			email: { $regex: `^${escaped}$`, $options: "i" },
+		}).lean<RoleAssignment[]>();
 	}
 	async createAssignment(a: RoleAssignment): Promise<RoleAssignment> {
 		await this.Assignment.create(a);

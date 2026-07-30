@@ -1,10 +1,18 @@
 import type { MemoryModule } from "@ainetwork/adk/modules";
-import type { AuthzConfig, PermissionResolver, RouteRequirement } from "@ainetwork/adk/types/authz";
+import type {
+	AuthzConfig,
+	PermissionResolver,
+	RouteRequirement,
+} from "@ainetwork/adk/types/authz";
+import { loggers } from "@ainetwork/adk/utils/logger";
 import mongoose from "mongoose";
 import { ManagedCategoryCache } from "./managed-cache";
 import { MongoRoleStore } from "./mongo-role-store";
 import { RoleResolver } from "./role-resolver";
-import { buildResourceRouteRequirements, type ResourceRouteOptions } from "./route-requirements";
+import {
+	buildResourceRouteRequirements,
+	type ResourceRouteOptions,
+} from "./route-requirements";
 import type { RoleStore } from "./types";
 
 /** A resource to protect: a built-in ADK resource name (routes + byId loader
@@ -57,9 +65,26 @@ export class MongoAuthz implements AuthzConfig {
 	private managed: ManagedCategoryCache;
 
 	constructor(opts: MongoAuthzOptions) {
-		const conn = mongoose.createConnection(opts.connectionString);
+		const conn = mongoose.createConnection(opts.connectionString, {
+			// Bound server selection so an unreachable store surfaces as a timely,
+			// logged error instead of hanging queries at mongoose's default.
+			serverSelectionTimeoutMS: 10_000,
+		});
+		conn.on("connected", () =>
+			loggers.agent.info("[authz] role-store MongoDB connected"),
+		);
+		conn.on("disconnected", () =>
+			loggers.agent.warn("[authz] role-store MongoDB disconnected"),
+		);
+		conn.on("error", (err) =>
+			loggers.agent.error(
+				`[authz] role-store MongoDB connection error: ${err instanceof Error ? err.message : String(err)}`,
+			),
+		);
 		this.store = new MongoRoleStore(conn);
-		this.resolver = new RoleResolver(this.store, { cacheTtlMs: opts.cacheTtlMs });
+		this.resolver = new RoleResolver(this.store, {
+			cacheTtlMs: opts.cacheTtlMs,
+		});
 		this.managed = new ManagedCategoryCache(
 			() => this.store.listRoles(),
 			opts.managedCacheTtlMs ?? 30_000,
@@ -67,7 +92,9 @@ export class MongoAuthz implements AuthzConfig {
 		);
 
 		const specs = opts.resources ?? ["document"];
-		this.routes = specs.flatMap((spec) => buildResourceRouteRequirements(this.resolveSpec(spec, opts)));
+		this.routes = specs.flatMap((spec) =>
+			buildResourceRouteRequirements(this.resolveSpec(spec, opts)),
+		);
 
 		// Prime the managed-category cache so the first create is gated correctly.
 		this.managed.prime();
@@ -76,14 +103,19 @@ export class MongoAuthz implements AuthzConfig {
 	/** Resolve a resource spec to full route options: inject the shared managed
 	 * predicate (bound to this resource) + categoryLabel, and derive built-in
 	 * loaders from the MemoryModule. A custom spec's own fields win. */
-	private resolveSpec(spec: ResourceSpec, opts: MongoAuthzOptions): ResourceRouteOptions {
+	private resolveSpec(
+		spec: ResourceSpec,
+		opts: MongoAuthzOptions,
+	): ResourceRouteOptions {
 		let resolved: ResourceRouteOptions;
 		if (spec === "document") {
 			const mem = opts.memoryModule?.getDocumentMemory();
 			resolved = {
 				resource: "document",
 				basePath: "/api/document",
-				load: mem ? (id) => mem.getDocument(id).then((d) => d ?? null) : undefined,
+				load: mem
+					? (id) => mem.getDocument(id).then((d) => d ?? null)
+					: undefined,
 				// Sub-actions on an existing document (generate advice, fill a data
 				// slot, edit a slot's variables) are gated like a write on that
 				// document — only holders of a write role for its scope (or the

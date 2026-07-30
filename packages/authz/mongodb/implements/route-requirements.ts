@@ -16,7 +16,9 @@ export interface ResourceRouteOptions {
 	 * Omit to gate only create (+ list); update/delete then fall back to the
 	 * handler's own owner check. This is the only thing that needs storage
 	 * access, so route building itself stays memory-agnostic. */
-	load?: (id: string) => Promise<{ labels?: Record<string, string> } | null | undefined>;
+	load?: (
+		id: string,
+	) => Promise<{ labels?: Record<string, string> } | null | undefined>;
 	/** Document label key holding the category. Default: "category". */
 	categoryLabel?: string;
 	/** Predicate deciding whether a document category is "managed": creating one
@@ -41,11 +43,14 @@ export interface ResourceRouteOptions {
  * - update/delete (byId): scope/category checked against the target record —
  *   only added when `load` is supplied (needed to load the target's labels).
  */
-export function buildResourceRouteRequirements(opts: ResourceRouteOptions): RouteRequirement[] {
+export function buildResourceRouteRequirements(
+	opts: ResourceRouteOptions,
+): RouteRequirement[] {
 	const { resource, basePath, load } = opts;
 	const categoryLabel = opts.categoryLabel ?? "category";
 	const staticManaged = new Set(opts.managedCategories ?? []);
-	const isManaged = opts.isManaged ?? ((category: string) => staticManaged.has(category));
+	const isManaged =
+		opts.isManaged ?? ((category: string) => staticManaged.has(category));
 
 	// Surface the record's labels as authz attrs. The resolver matches
 	// role.category against attrs.category and each role.scope dimension key
@@ -59,7 +64,8 @@ export function buildResourceRouteRequirements(opts: ResourceRouteOptions): Rout
 	};
 
 	const attrsFromBody = (req: DocReq) => {
-		const labels = (req.body as { labels?: Record<string, string> })?.labels ?? {};
+		const labels =
+			(req.body as { labels?: Record<string, string> })?.labels ?? {};
 		const category = labels[categoryLabel];
 		// Non-managed (personal) records: not gated — owner creates their own.
 		if (!category || !isManaged(category)) return "skip" as const;
@@ -68,10 +74,24 @@ export function buildResourceRouteRequirements(opts: ResourceRouteOptions): Rout
 
 	const routes: RouteRequirement[] = [
 		{ method: "GET", path: basePath, resource, action: "read", mode: "list" },
-		{ method: "POST", path: basePath, resource, action: "write", mode: "fromBody", bodyAttrs: attrsFromBody },
+		{
+			method: "POST",
+			path: basePath,
+			resource,
+			action: "write",
+			mode: "fromBody",
+			bodyAttrs: attrsFromBody,
+		},
 		// Reading a single record is open (the resolver opens reads), so we grant
 		// cross-user access without loading the record — no storage hit needed.
-		{ method: "GET", path: `${basePath}/:id`, resource, action: "read", mode: "byId", loadAttrs: async () => ({}) },
+		{
+			method: "GET",
+			path: `${basePath}/:id`,
+			resource,
+			action: "read",
+			mode: "byId",
+			loadAttrs: async () => ({}),
+		},
 	];
 
 	// update/delete (and any extra byId write sub-actions) gate on the target's

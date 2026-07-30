@@ -19,6 +19,7 @@ import type {
 	StreamChunk,
 	ToolCallDelta,
 } from "@ainetwork/adk/types/stream";
+import { loggers } from "@ainetwork/adk/utils/logger";
 import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,
@@ -28,6 +29,10 @@ import type {
 	ChatCompletionTool,
 } from "openai/resources";
 
+const DEFAULT_TIMEOUT_MS = 120_000;
+const DEFAULT_MAX_RETRIES = 1;
+const PROVIDER = "azure-openai";
+
 export interface AzureOpenAIConfig {
 	endpoint?: string;
 	deployment?: string;
@@ -35,6 +40,10 @@ export interface AzureOpenAIConfig {
 	apiKey: string;
 	apiVersion: string;
 	modelName: string;
+	/** Request timeout in milliseconds. Defaults to 120000 (2 minutes). */
+	timeout?: number;
+	/** Maximum number of automatic retries. Defaults to 1. */
+	maxRetries?: number;
 }
 
 export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
@@ -48,6 +57,8 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		apiKey,
 		apiVersion,
 		modelName,
+		timeout = DEFAULT_TIMEOUT_MS,
+		maxRetries = DEFAULT_MAX_RETRIES,
 	}: AzureOpenAIConfig) {
 		super();
 		const options = {
@@ -56,6 +67,8 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			deployment,
 			apiVersion,
 			baseURL: baseUrl,
+			timeout,
+			maxRetries,
 		};
 		this.client = new AzureOpenAIClient(options);
 		this.modelName = modelName;
@@ -66,11 +79,38 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			case MessageRole.USER:
 				return "user";
 			case MessageRole.MODEL:
+				return "assistant";
 			case MessageRole.SYSTEM:
 				return "system";
 			default:
-				return "system"; /*FIXME*/
+				return "system";
 		}
+	}
+
+	private logCallStart(method: string, messageCount: number, toolCount = 0) {
+		loggers.model.debug(`[${PROVIDER}] ${method} start`, {
+			provider: PROVIDER,
+			model: this.modelName,
+			messageCount,
+			toolCount,
+		});
+	}
+
+	private logCallSuccess(method: string, startedAt: number) {
+		loggers.model.info(`[${PROVIDER}] ${method} complete`, {
+			provider: PROVIDER,
+			model: this.modelName,
+			durationMs: Date.now() - startedAt,
+		});
+	}
+
+	private logCallFailure(method: string, startedAt: number, error: unknown) {
+		loggers.model.error(`[${PROVIDER}] ${method} failed`, {
+			provider: PROVIDER,
+			model: this.modelName,
+			durationMs: Date.now() - startedAt,
+			error: error instanceof Error ? error.message : String(error),
+		});
 	}
 
 	generateMessages(params: {
@@ -137,16 +177,24 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		messages: CCMessageParam[],
 		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
-		const response = await this.client.chat.completions.create({
-			model: this.modelName,
-			messages,
-			reasoning_effort: options?.reasoning,
-			verbosity: options?.verbosity,
-		});
+		const startedAt = Date.now();
+		this.logCallStart("fetch", messages.length);
+		try {
+			const response = await this.client.chat.completions.create({
+				model: this.modelName,
+				messages,
+				reasoning_effort: options?.reasoning,
+				verbosity: options?.verbosity,
+			});
+			this.logCallSuccess("fetch", startedAt);
 
-		return {
-			content: response.choices[0].message.content || undefined,
-		};
+			return {
+				content: response.choices[0].message.content || undefined,
+			};
+		} catch (error) {
+			this.logCallFailure("fetch", startedAt, error);
+			throw error;
+		}
 	}
 
 	async fetchWithContextMessage(
@@ -155,34 +203,53 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
 		if (functions.length > 0) {
-			const response = await this.client.chat.completions.create({
-				model: this.modelName,
-				messages,
-				tools: functions,
-				tool_choice: options?.toolChoice ?? "auto",
-				reasoning_effort: options?.reasoning,
-				verbosity: options?.verbosity,
-			});
-
-			const { content, tool_calls } = response.choices[0].message;
-
-			const toolCalls: ToolCall[] | undefined = tool_calls?.map(
-				(value: ChatCompletionMessageToolCall) => {
-					const v = value as ChatCompletionMessageFunctionToolCall;
-					return {
-						name: v.function.name,
-						// FIXME: value.function.arguments could not be a valid JSON
-						arguments: JSON.parse(v.function.arguments),
-					};
-				},
+			const startedAt = Date.now();
+			this.logCallStart(
+				"fetchWithContextMessage",
+				messages.length,
+				functions.length,
 			);
+			try {
+				const response = await this.client.chat.completions.create({
+					model: this.modelName,
+					messages,
+					tools: functions,
+					tool_choice: options?.toolChoice ?? "auto",
+					reasoning_effort: options?.reasoning,
+					verbosity: options?.verbosity,
+				});
+				this.logCallSuccess("fetchWithContextMessage", startedAt);
 
-			return {
-				content: content || undefined,
-				toolCalls,
-			};
+				const { content, tool_calls } = response.choices[0].message;
+
+				const toolCalls: ToolCall[] | undefined = tool_calls?.map(
+					(value: ChatCompletionMessageToolCall) => {
+						const v = value as ChatCompletionMessageFunctionToolCall;
+						let args: Record<string, unknown>;
+						try {
+							args = JSON.parse(v.function.arguments);
+						} catch {
+							// Forward the raw argument string so the caller can surface it
+							// (and the model can self-correct) instead of killing the fetch.
+							args = { __raw: v.function.arguments };
+						}
+						return {
+							name: v.function.name,
+							arguments: args,
+						};
+					},
+				);
+
+				return {
+					content: content || undefined,
+					toolCalls,
+				};
+			} catch (error) {
+				this.logCallFailure("fetchWithContextMessage", startedAt, error);
+				throw error;
+			}
 		}
-		return await this.fetch(messages);
+		return await this.fetch(messages, options);
 	}
 
 	async fetchStreamWithContextMessage(
@@ -190,17 +257,61 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		functions: ChatCompletionTool[],
 		options?: ModelFetchOptions,
 	): Promise<LLMStream> {
-		const stream = await this.client.chat.completions.create({
-			model: this.modelName,
-			messages,
-			tools: functions,
-			tool_choice:
-				functions.length > 0 ? (options?.toolChoice ?? "auto") : "none",
-			stream: true,
-			reasoning_effort: options?.reasoning,
-			verbosity: options?.verbosity,
-		});
-		return this.createOpenAIStreamAdapter(stream);
+		const startedAt = Date.now();
+		this.logCallStart(
+			"fetchStreamWithContextMessage",
+			messages.length,
+			functions.length,
+		);
+		try {
+			const stream = await this.client.chat.completions.create({
+				model: this.modelName,
+				messages,
+				...(functions.length > 0
+					? {
+							tools: functions,
+							tool_choice: options?.toolChoice ?? "auto",
+						}
+					: {}),
+				stream: true,
+				reasoning_effort: options?.reasoning,
+				verbosity: options?.verbosity,
+			});
+			return this.withStreamLogging(
+				this.createOpenAIStreamAdapter(stream),
+				"fetchStreamWithContextMessage",
+				startedAt,
+			);
+		} catch (error) {
+			this.logCallFailure("fetchStreamWithContextMessage", startedAt, error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Wraps an LLMStream so the completion log covers the whole stream
+	 * lifetime, not just the initial request.
+	 */
+	private withStreamLogging(
+		stream: LLMStream,
+		method: string,
+		startedAt: number,
+	): LLMStream {
+		const logSuccess = () => this.logCallSuccess(method, startedAt);
+		const logFailure = (error: unknown) =>
+			this.logCallFailure(method, startedAt, error);
+		return {
+			...stream,
+			async *[Symbol.asyncIterator](): AsyncIterator<StreamChunk> {
+				try {
+					yield* stream;
+					logSuccess();
+				} catch (error) {
+					logFailure(error);
+					throw error;
+				}
+			},
+		};
 	}
 
 	// NOTE(yoojin): Need to switch API Stream type to LLMStream.

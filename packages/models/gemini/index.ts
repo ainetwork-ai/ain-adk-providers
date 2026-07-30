@@ -19,24 +19,51 @@ import type {
 	StreamChunk,
 	ToolCallDelta,
 } from "@ainetwork/adk/types/stream";
+import { loggers } from "@ainetwork/adk/utils/logger";
 import {
 	type Content,
 	type FunctionCall,
 	FunctionCallingConfigMode,
 	type FunctionDeclaration,
+	type GenerateContentConfig,
 	type GenerateContentResponse,
 	GoogleGenAI,
 	type Part,
 } from "@google/genai";
 
+const DEFAULT_TIMEOUT_MS = 120_000;
+const PROVIDER = "gemini";
+
+// Sentinel role used to carry the system prompt inside the message array
+// until fetch time, where it is extracted into config.systemInstruction.
+// It is never sent to the Gemini API (which only accepts user/model roles).
+const SYSTEM_INSTRUCTION_ROLE = "system";
+
+export interface GeminiModelConfig {
+	apiKey: string;
+	modelName: string;
+	/** Request timeout in milliseconds. Defaults to 120000 (2 minutes). */
+	timeout?: number;
+}
+
 export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 	private client: GoogleGenAI;
 	private modelName: string;
 
-	constructor(apiKey: string, modelName: string) {
+	constructor(config: GeminiModelConfig);
+	/** @deprecated Use the config-object constructor instead. */
+	constructor(apiKey: string, modelName: string);
+	constructor(configOrApiKey: GeminiModelConfig | string, modelName?: string) {
 		super();
-		this.client = new GoogleGenAI({ apiKey });
-		this.modelName = modelName;
+		const config: GeminiModelConfig =
+			typeof configOrApiKey === "string"
+				? { apiKey: configOrApiKey, modelName: modelName as string }
+				: configOrApiKey;
+		this.client = new GoogleGenAI({
+			apiKey: config.apiKey,
+			httpOptions: { timeout: config.timeout ?? DEFAULT_TIMEOUT_MS },
+		});
+		this.modelName = config.modelName;
 	}
 
 	private getMessageRole(role: MessageRole) {
@@ -51,6 +78,59 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		}
 	}
 
+	private logCallStart(method: string, messageCount: number, toolCount = 0) {
+		loggers.model.debug(`[${PROVIDER}] ${method} start`, {
+			provider: PROVIDER,
+			model: this.modelName,
+			messageCount,
+			toolCount,
+		});
+	}
+
+	private logCallSuccess(method: string, startedAt: number) {
+		loggers.model.info(`[${PROVIDER}] ${method} complete`, {
+			provider: PROVIDER,
+			model: this.modelName,
+			durationMs: Date.now() - startedAt,
+		});
+	}
+
+	private logCallFailure(method: string, startedAt: number, error: unknown) {
+		loggers.model.error(`[${PROVIDER}] ${method} failed`, {
+			provider: PROVIDER,
+			model: this.modelName,
+			durationMs: Date.now() - startedAt,
+			error: error instanceof Error ? error.message : String(error),
+		});
+	}
+
+	/**
+	 * Splits the sentinel system-instruction entries out of the message array
+	 * so they can be sent via the SDK's config.systemInstruction instead of
+	 * being smuggled in as a (misattributed) conversation turn.
+	 */
+	private splitSystemInstruction(messages: Content[]): {
+		contents: Content[];
+		systemInstruction?: string;
+	} {
+		const systemParts: string[] = [];
+		const contents: Content[] = [];
+		for (const message of messages) {
+			if (message.role === SYSTEM_INSTRUCTION_ROLE) {
+				for (const part of message.parts ?? []) {
+					if (part.text) systemParts.push(part.text);
+				}
+			} else {
+				contents.push(message);
+			}
+		}
+		return {
+			contents,
+			systemInstruction:
+				systemParts.length > 0 ? systemParts.join("\n") : undefined,
+		};
+	}
+
 	generateMessages(params: {
 		query: string;
 		thread?: ThreadObject;
@@ -59,7 +139,12 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		const { query, thread, systemPrompt } = params;
 		const messages: Content[] = !systemPrompt
 			? []
-			: [{ role: "model", parts: [{ text: systemPrompt.trim() }] }];
+			: [
+					{
+						role: SYSTEM_INSTRUCTION_ROLE,
+						parts: [{ text: systemPrompt.trim() }],
+					},
+				];
 		const sessionContent: Content[] = !thread
 			? []
 			: thread.messages.map((message: MessageObject) => {
@@ -130,12 +215,27 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		messages: Content[],
 		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
-		const response = await this.client.models.generateContent({
-			model: this.modelName,
-			contents: messages,
-		});
+		void options; // No Gemini equivalent for reasoning/verbosity; kept for parity.
+		const startedAt = Date.now();
+		this.logCallStart("fetch", messages.length);
+		try {
+			const { contents, systemInstruction } =
+				this.splitSystemInstruction(messages);
+			const config: GenerateContentConfig = {
+				...(systemInstruction ? { systemInstruction } : {}),
+			};
+			const response = await this.client.models.generateContent({
+				model: this.modelName,
+				contents,
+				config,
+			});
+			this.logCallSuccess("fetch", startedAt);
 
-		return { content: response.text };
+			return { content: response.text };
+		} catch (error) {
+			this.logCallFailure("fetch", startedAt, error);
+			throw error;
+		}
 	}
 
 	async fetchWithContextMessage(
@@ -144,42 +244,57 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		options?: ModelFetchOptions,
 	): Promise<FetchResponse> {
 		if (functions.length > 0) {
-			const toolChoiceMode =
-				options?.toolChoice === "required"
-					? FunctionCallingConfigMode.ANY
-					: FunctionCallingConfigMode.AUTO;
-			const response = await this.client.models.generateContent({
-				model: this.modelName,
-				contents: messages,
-				config: {
-					tools: [{ functionDeclarations: functions }],
-					toolConfig: {
-						functionCallingConfig: { mode: toolChoiceMode },
+			const startedAt = Date.now();
+			this.logCallStart(
+				"fetchWithContextMessage",
+				messages.length,
+				functions.length,
+			);
+			try {
+				const toolChoiceMode =
+					options?.toolChoice === "required"
+						? FunctionCallingConfigMode.ANY
+						: FunctionCallingConfigMode.AUTO;
+				const { contents, systemInstruction } =
+					this.splitSystemInstruction(messages);
+				const response = await this.client.models.generateContent({
+					model: this.modelName,
+					contents,
+					config: {
+						...(systemInstruction ? { systemInstruction } : {}),
+						tools: [{ functionDeclarations: functions }],
+						toolConfig: {
+							functionCallingConfig: { mode: toolChoiceMode },
+						},
 					},
-				},
-			});
-
-			const { text, functionCalls } = response;
-			const hasName = (
-				value: FunctionCall,
-			): value is FunctionCall & { name: string } => {
-				return value.name !== undefined;
-			};
-			const toolCalls: ToolCall[] | undefined = functionCalls
-				?.filter(hasName)
-				.map((value) => {
-					return {
-						name: value.name,
-						arguments: value.args,
-					};
 				});
+				this.logCallSuccess("fetchWithContextMessage", startedAt);
 
-			return {
-				content: text,
-				toolCalls,
-			};
+				const { text, functionCalls } = response;
+				const hasName = (
+					value: FunctionCall,
+				): value is FunctionCall & { name: string } => {
+					return value.name !== undefined;
+				};
+				const toolCalls: ToolCall[] | undefined = functionCalls
+					?.filter(hasName)
+					.map((value) => {
+						return {
+							name: value.name,
+							arguments: value.args,
+						};
+					});
+
+				return {
+					content: text,
+					toolCalls,
+				};
+			} catch (error) {
+				this.logCallFailure("fetchWithContextMessage", startedAt, error);
+				throw error;
+			}
 		}
-		return await this.fetch(messages);
+		return await this.fetch(messages, options);
 	}
 
 	async fetchStreamWithContextMessage(
@@ -187,22 +302,71 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		functions: FunctionDeclaration[],
 		options?: ModelFetchOptions,
 	): Promise<LLMStream> {
-		const toolChoiceMode =
-			options?.toolChoice === "required"
-				? FunctionCallingConfigMode.ANY
-				: FunctionCallingConfigMode.AUTO;
-		const stream = await this.client.models.generateContentStream({
-			model: this.modelName,
-			contents: messages,
-			config: {
-				tools: [{ functionDeclarations: functions }],
-				toolConfig: {
-					functionCallingConfig: { mode: toolChoiceMode },
-				},
-			},
-		});
+		const startedAt = Date.now();
+		this.logCallStart(
+			"fetchStreamWithContextMessage",
+			messages.length,
+			functions.length,
+		);
+		try {
+			const toolChoiceMode =
+				options?.toolChoice === "required"
+					? FunctionCallingConfigMode.ANY
+					: FunctionCallingConfigMode.AUTO;
+			const { contents, systemInstruction } =
+				this.splitSystemInstruction(messages);
+			const config: GenerateContentConfig = {
+				...(systemInstruction ? { systemInstruction } : {}),
+				...(functions.length > 0
+					? {
+							tools: [{ functionDeclarations: functions }],
+							toolConfig: {
+								functionCallingConfig: { mode: toolChoiceMode },
+							},
+						}
+					: {}),
+			};
+			const stream = await this.client.models.generateContentStream({
+				model: this.modelName,
+				contents,
+				config,
+			});
 
-		return this.createGeminiStreamAdapter(stream);
+			return this.withStreamLogging(
+				this.createGeminiStreamAdapter(stream),
+				"fetchStreamWithContextMessage",
+				startedAt,
+			);
+		} catch (error) {
+			this.logCallFailure("fetchStreamWithContextMessage", startedAt, error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Wraps an LLMStream so the completion log covers the whole stream
+	 * lifetime, not just the initial request.
+	 */
+	private withStreamLogging(
+		stream: LLMStream,
+		method: string,
+		startedAt: number,
+	): LLMStream {
+		const logSuccess = () => this.logCallSuccess(method, startedAt);
+		const logFailure = (error: unknown) =>
+			this.logCallFailure(method, startedAt, error);
+		return {
+			...stream,
+			async *[Symbol.asyncIterator](): AsyncIterator<StreamChunk> {
+				try {
+					yield* stream;
+					logSuccess();
+				} catch (error) {
+					logFailure(error);
+					throw error;
+				}
+			},
+		};
 	}
 
 	// NOTE(yoojin): Need to switch API Stream type to LLMStream.

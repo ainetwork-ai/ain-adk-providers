@@ -1,6 +1,5 @@
 import type { ScheduleRun } from "@ainetwork/adk/types/schedule";
-import { type Document, Schema } from "mongoose";
-import mongoose from "mongoose";
+import mongoose, { type Document, Schema } from "mongoose";
 
 export const ScheduleRunSchema = new Schema(
 	{
@@ -62,7 +61,7 @@ export const ScheduleRunSchema = new Schema(
 	},
 	{
 		collection: "schedule_runs",
-	}
+	},
 );
 
 // 이력 조회(listScheduleRuns)의 주 패턴인 "jobKey 필터 + startedAt 최신순"을
@@ -75,12 +74,12 @@ ScheduleRunSchema.index({ jobKey: 1, startedAt: -1 });
 const SCHEDULE_RUN_TTL_SECONDS = 60 * 60 * 24 * 90;
 ScheduleRunSchema.index(
 	{ createdAt: 1 },
-	{ expireAfterSeconds: SCHEDULE_RUN_TTL_SECONDS }
+	{ expireAfterSeconds: SCHEDULE_RUN_TTL_SECONDS },
 );
 
 export type ScheduleRunDocument = ScheduleRun & Document;
 
 export const ScheduleRunModel = mongoose.model<ScheduleRunDocument>(
 	"ScheduleRun",
-	ScheduleRunSchema
+	ScheduleRunSchema,
 );

@@ -1,6 +1,5 @@
 import { ThreadType } from "@ainetwork/adk/types/memory";
-import { type Document, Schema } from "mongoose";
-import mongoose from "mongoose";
+import mongoose, { type Document, Schema } from "mongoose";
 
 export const ThreadObjectSchema = new Schema(
 	{
@@ -50,4 +49,7 @@ export interface ThreadDocument extends Document {
 	updatedAt: Date;
 }
 
-export const ThreadModel = mongoose.model<ThreadDocument>("Thread", ThreadObjectSchema);
+export const ThreadModel = mongoose.model<ThreadDocument>(
+	"Thread",
+	ThreadObjectSchema,
+);

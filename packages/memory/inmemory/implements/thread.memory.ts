@@ -1,138 +1,167 @@
-import type { MessageObject, ThreadObject, ThreadMetadata, ThreadType, ThreadFilter } from "@ainetwork/adk/types/memory";
-import { IThreadMemory } from "@ainetwork/adk/modules";
+import type { IThreadMemory } from "@ainetwork/adk/modules";
+import type {
+	MessageObject,
+	ThreadFilter,
+	ThreadMetadata,
+	ThreadObject,
+	ThreadType,
+} from "@ainetwork/adk/types/memory";
 
 type InMemoryThreadObject = {
-  type: ThreadType;
-  title: string;
-  isPinned: boolean;
-  workflowId?: string;
-  messages: Array<MessageObject>;
-}
+	type: ThreadType;
+	title: string;
+	isPinned: boolean;
+	workflowId?: string;
+	messages: Array<MessageObject>;
+};
 
 type InMemoryThreadMetadata = {
-  type: ThreadType;
-  userId: string;
-  threadId: string;
-  title: string;
-  isPinned: boolean;
-  workflowId?: string;
-  updatedAt: string;
-  createdAt: string;
-}
+	type: ThreadType;
+	userId: string;
+	threadId: string;
+	title: string;
+	isPinned: boolean;
+	workflowId?: string;
+	updatedAt: string;
+	createdAt: string;
+};
 
 export class InMemoryThread implements IThreadMemory {
-  public threads: Map<string, InMemoryThreadObject> = new Map();
-  public userThreadIndex: Map<string, Set<InMemoryThreadMetadata>> = new Map();
+	public threads: Map<string, InMemoryThreadObject> = new Map();
+	public userThreadIndex: Map<string, Set<InMemoryThreadMetadata>> = new Map();
 
-  private generateKey(userId: string, threadId: string) {
-    return `${userId}:${threadId}`;
-  }
+	private generateKey(userId: string, threadId: string) {
+		return `${userId}:${threadId}`;
+	}
 
-  public async getThread(
-    userId: string,
-    threadId: string
-  ): Promise<ThreadObject | undefined> {
-    const key = this.generateKey(userId, threadId);
-    const res = this.threads.get(key);
-    if (res) {
-      const threadObject: ThreadObject = {
-        threadId,
-        userId,
-        type: res.type,
-        title: res.title,
-        isPinned: res.isPinned,
-        workflowId: res.workflowId,
-        messages: res.messages,
-      };
-      return threadObject;
-    }
-    return undefined;
-  }
+	public async getThread(
+		userId: string,
+		threadId: string,
+	): Promise<ThreadObject | undefined> {
+		const key = this.generateKey(userId, threadId);
+		const res = this.threads.get(key);
+		if (res) {
+			const threadObject: ThreadObject = {
+				threadId,
+				userId,
+				type: res.type,
+				title: res.title,
+				isPinned: res.isPinned,
+				workflowId: res.workflowId,
+				messages: res.messages,
+			};
+			return threadObject;
+		}
+		return undefined;
+	}
 
-  public async createThread(
-    type: ThreadType,
-    userId: string,
-    threadId: string,
-    title: string,
-    workflowId?: string,
-  ): Promise<ThreadObject> {
-    const now = Date.now();
-    const key = this.generateKey(userId, threadId);
-    if (!this.userThreadIndex.has(userId)) {
-      this.userThreadIndex.set(userId, new Set());
-    }
-    if (!this.threads.has(key)) {
-      this.threads.set(key, { type, title, isPinned: false, workflowId, messages: [] });
-      const metadata: InMemoryThreadMetadata = {
-        type, userId, threadId, title, isPinned: false, workflowId, createdAt: new Date(now).toISOString(), updatedAt: new Date(now).toISOString(),
-      }
-      this.userThreadIndex.get(userId)?.add(metadata);
-    }
+	public async createThread(
+		type: ThreadType,
+		userId: string,
+		threadId: string,
+		title: string,
+		workflowId?: string,
+	): Promise<ThreadObject> {
+		const now = Date.now();
+		const key = this.generateKey(userId, threadId);
+		if (!this.userThreadIndex.has(userId)) {
+			this.userThreadIndex.set(userId, new Set());
+		}
+		if (!this.threads.has(key)) {
+			this.threads.set(key, {
+				type,
+				title,
+				isPinned: false,
+				workflowId,
+				messages: [],
+			});
+			const metadata: InMemoryThreadMetadata = {
+				type,
+				userId,
+				threadId,
+				title,
+				isPinned: false,
+				workflowId,
+				createdAt: new Date(now).toISOString(),
+				updatedAt: new Date(now).toISOString(),
+			};
+			this.userThreadIndex.get(userId)?.add(metadata);
+		}
 
-    return { type, title, threadId, userId, workflowId, messages: [] };
-  }
+		return { type, title, threadId, userId, workflowId, messages: [] };
+	}
 
-  public async addMessagesToThread(
-    userId: string,
-    threadId: string,
-    messages: MessageObject[]
-  ): Promise<void> {
-    const key = this.generateKey(userId, threadId);
-    const thread = this.threads.get(key);
-    for (const message of messages) {
-      thread?.messages.push(message);
-    }
-  }
+	public async addMessagesToThread(
+		userId: string,
+		threadId: string,
+		messages: MessageObject[],
+	): Promise<void> {
+		const key = this.generateKey(userId, threadId);
+		const thread = this.threads.get(key);
+		if (!thread) {
+			// Parity with the MongoDB provider: adding messages to a missing
+			// thread must fail loudly instead of silently dropping them.
+			throw new Error(`Thread not found: ${threadId}`);
+		}
+		for (const message of messages) {
+			thread.messages.push(message);
+		}
+	}
 
-  public async deleteThread(userId: string, threadId: string): Promise<void> {
-    const key = this.generateKey(userId, threadId);
-    this.threads.delete(key);
+	public async deleteThread(userId: string, threadId: string): Promise<void> {
+		const key = this.generateKey(userId, threadId);
+		this.threads.delete(key);
 
-    // userThreadIndex에서 해당 thread metadata 제거
-    const userThreads = this.userThreadIndex.get(userId);
-    if (userThreads) {
-      const metadataToDelete = Array.from(userThreads).find(
-        metadata => metadata.threadId === threadId
-      );
-      if (metadataToDelete) {
-        userThreads.delete(metadataToDelete);
-      }
-    }
-  }
+		// userThreadIndex에서 해당 thread metadata 제거
+		const userThreads = this.userThreadIndex.get(userId);
+		if (userThreads) {
+			const metadataToDelete = Array.from(userThreads).find(
+				(metadata) => metadata.threadId === threadId,
+			);
+			if (metadataToDelete) {
+				userThreads.delete(metadataToDelete);
+			}
+		}
+	}
 
-  public async listThreads(userId: string, filter?: ThreadFilter): Promise<ThreadMetadata[]> {
-    const threads = this.userThreadIndex.get(userId);
-    if (!threads) return [];
+	public async listThreads(
+		userId: string,
+		filter?: ThreadFilter,
+	): Promise<ThreadMetadata[]> {
+		const threads = this.userThreadIndex.get(userId);
+		if (!threads) return [];
 
-    let result = Array.from(threads);
-    if (filter?.workflowId) {
-      result = result.filter(t => t.workflowId === filter.workflowId);
-    }
-    if (filter?.type) {
-      result = result.filter(t => t.type === filter.type);
-    }
-    return result;
-  }
+		let result = Array.from(threads);
+		if (filter?.workflowId) {
+			result = result.filter((t) => t.workflowId === filter.workflowId);
+		}
+		if (filter?.type) {
+			result = result.filter((t) => t.type === filter.type);
+		}
+		return result;
+	}
 
-  public async updateThreadPin(
-    userId: string,
-    threadId: string,
-    isPinned: boolean
-  ): Promise<void> {
-    const key = this.generateKey(userId, threadId);
-    const thread = this.threads.get(key);
-    if (thread) {
-      thread.isPinned = isPinned;
-    }
+	public async updateThreadPin(
+		userId: string,
+		threadId: string,
+		isPinned: boolean,
+	): Promise<void> {
+		const key = this.generateKey(userId, threadId);
+		const thread = this.threads.get(key);
+		if (!thread) {
+			// Parity with the MongoDB provider: updating a missing thread throws.
+			throw new Error(`Thread not found: ${threadId}`);
+		}
+		thread.isPinned = isPinned;
 
-    const userThreads = this.userThreadIndex.get(userId);
-    if (userThreads) {
-      const metadata = Array.from(userThreads).find(
-        m => m.threadId === threadId
-      );
-      if (metadata) {
-        metadata.isPinned = isPinned;
-      }
-    }
-  }
+		const userThreads = this.userThreadIndex.get(userId);
+		if (userThreads) {
+			const metadata = Array.from(userThreads).find(
+				(m) => m.threadId === threadId,
+			);
+			if (metadata) {
+				metadata.isPinned = isPinned;
+			}
+		}
+	}
 }

@@ -2,8 +2,7 @@ import type {
 	WorkflowDefinition,
 	WorkflowVariable,
 } from "@ainetwork/adk/types/memory";
-import { type Document, Schema } from "mongoose";
-import mongoose from "mongoose";
+import mongoose, { type Document, Schema } from "mongoose";
 
 export const UserWorkflowObjectSchema = new Schema(
 	{
@@ -66,7 +65,7 @@ export const UserWorkflowObjectSchema = new Schema(
 	},
 	{
 		timestamps: true,
-	}
+	},
 );
 
 export interface UserWorkflowDocument extends Document {
@@ -90,5 +89,5 @@ export interface UserWorkflowDocument extends Document {
 
 export const UserWorkflowModel = mongoose.model<UserWorkflowDocument>(
 	"UserWorkflow",
-	UserWorkflowObjectSchema
+	UserWorkflowObjectSchema,
 );

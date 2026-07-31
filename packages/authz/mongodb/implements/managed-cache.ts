@@ -1,3 +1,4 @@
+import { loggers } from "@ainetwork/adk/utils/logger";
 import type { Role } from "./types";
 
 /** Categories governed by a write role for `resource` are "managed" (their
@@ -10,7 +11,11 @@ export function managedCategoriesFromRoles(
 ): Set<string> {
 	const set = new Set<string>(extra ?? []);
 	for (const r of roles) {
-		if ((r.resource === resource || r.resource === "*") && r.category && r.actions.includes("write")) {
+		if (
+			(r.resource === resource || r.resource === "*") &&
+			r.category &&
+			r.actions.includes("write")
+		) {
 			set.add(r.category);
 		}
 	}
@@ -30,6 +35,9 @@ export class ManagedCategoryCache {
 	private roles: Role[] = [];
 	private at = 0;
 	private primed = false;
+	/** True while refreshes are failing — used to log only state transitions
+	 * (first failure, then recovery) so a store outage doesn't flood the logs. */
+	private failing = false;
 
 	constructor(
 		private readonly listRoles: () => Promise<Role[]>,
@@ -45,7 +53,9 @@ export class ManagedCategoryCache {
 	isManaged(resource: string, category: string): boolean {
 		if (Date.now() - this.at > this.ttlMs) this.refresh(); // non-blocking
 		if (!this.primed) return true; // fail closed until first load
-		return managedCategoriesFromRoles(this.roles, resource, this.extra).has(category);
+		return managedCategoriesFromRoles(this.roles, resource, this.extra).has(
+			category,
+		);
 	}
 
 	private refresh(): void {
@@ -54,9 +64,21 @@ export class ManagedCategoryCache {
 				this.roles = roles;
 				this.at = Date.now();
 				this.primed = true;
+				if (this.failing) {
+					this.failing = false;
+					loggers.agent.info("[authz] managed-category refresh recovered");
+				}
 			})
-			.catch(() => {
-				// keep the previous snapshot; a transient DB error shouldn't flap policy
+			.catch((err) => {
+				// Keep the previous snapshot; a transient DB error shouldn't flap
+				// policy (and before the first load isManaged stays fail-closed).
+				if (!this.failing) {
+					this.failing = true;
+					const msg = err instanceof Error ? err.message : String(err);
+					loggers.agent.error(
+						`[authz] managed-category refresh failed (serving ${this.primed ? "previous snapshot" : "fail-closed default"}; further failures suppressed until recovery): ${msg}`,
+					);
+				}
 			});
 	}
 }

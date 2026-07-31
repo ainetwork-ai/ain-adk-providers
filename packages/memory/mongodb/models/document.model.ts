@@ -6,8 +6,7 @@ import {
 	DocumentSource,
 } from "@ainetwork/adk/types/document";
 import type { WorkflowRenderedBlock } from "@ainetwork/adk/types/memory";
-import { type Document, Schema } from "mongoose";
-import mongoose from "mongoose";
+import mongoose, { type Document, Schema } from "mongoose";
 
 export const DocumentObjectSchema = new Schema(
 	{
@@ -92,7 +91,7 @@ export const DocumentObjectSchema = new Schema(
 	// so mongoose's automatic Date timestamps are intentionally disabled.
 	{
 		timestamps: false,
-	}
+	},
 );
 
 export interface DocumentDocument extends Document {
@@ -120,10 +119,10 @@ export interface DocumentDocument extends Document {
 // ($exists:false는 partialFilterExpression에 못 쓰므로 active=true로 좁히고 나머지는 스캔.)
 DocumentObjectSchema.index(
 	{ "autoRefresh.active": 1 },
-	{ partialFilterExpression: { "autoRefresh.active": true } }
+	{ partialFilterExpression: { "autoRefresh.active": true } },
 );
 
 export const DocumentModel = mongoose.model<DocumentDocument>(
 	"Document",
-	DocumentObjectSchema
+	DocumentObjectSchema,
 );

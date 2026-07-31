@@ -1,6 +1,5 @@
 import { MessageRole } from "@ainetwork/adk/types/memory";
-import { type Document, Schema } from "mongoose";
-import mongoose from "mongoose";
+import mongoose, { type Document, Schema } from "mongoose";
 
 // MessageContentObject schema
 export const MessageContentObjectSchema = new Schema(
@@ -70,4 +69,7 @@ export interface MessageDocument extends Document {
 	metadata?: { [key: string]: unknown };
 }
 
-export const MessageModel = mongoose.model<MessageDocument>("Message", MessageObjectSchema);
+export const MessageModel = mongoose.model<MessageDocument>(
+	"Message",
+	MessageObjectSchema,
+);

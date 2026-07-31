@@ -33,7 +33,9 @@ describe("InMemoryDocument.listDocuments — multi-value labels", () => {
 		const m = new InMemoryDocument();
 		await m.createDocument(doc("a", "walkerhill"));
 		await m.createDocument(doc("b", "seoul"));
-		const out = await m.listDocuments(undefined, { labels: { workplace: "seoul" } });
+		const out = await m.listDocuments(undefined, {
+			labels: { workplace: "seoul" },
+		});
 		expect(out.map((d) => d.documentId)).toEqual(["b"]);
 	});
 });

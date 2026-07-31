@@ -1,4 +1,12 @@
-import { IAgentMemory, IDocumentMemory, IIntentMemory, IMemory, IUserWorkflowMemory, IThreadMemory, IWorkflowTemplateMemory } from "@ainetwork/adk/modules";
+import type {
+	IAgentMemory,
+	IDocumentMemory,
+	IIntentMemory,
+	IMemory,
+	IThreadMemory,
+	IUserWorkflowMemory,
+	IWorkflowTemplateMemory,
+} from "@ainetwork/adk/modules";
 import { InMemoryAgent } from "./agent.memory";
 import { InMemoryDocument } from "./document.memory";
 import { InMemoryIntent } from "./intent.memory";
@@ -7,62 +15,62 @@ import { InMemoryUserWorkflow } from "./user-workflow.memory";
 import { InMemoryWorkflowTemplate } from "./workflow-template.memory";
 
 export class InMemoryMemory implements IMemory {
-  private static instance: InMemoryMemory;
-  private connected: boolean = false;
+	private static instance: InMemoryMemory;
+	private connected = false;
 
-  private agentMemory: InMemoryAgent;
-  private intentMemory: InMemoryIntent;
-  private threadMemory: InMemoryThread;
-  private workflowTemplateMemory: InMemoryWorkflowTemplate;
-  private userWorkflowMemory: InMemoryUserWorkflow;
-  private documentMemory: InMemoryDocument;
+	private agentMemory: InMemoryAgent;
+	private intentMemory: InMemoryIntent;
+	private threadMemory: InMemoryThread;
+	private workflowTemplateMemory: InMemoryWorkflowTemplate;
+	private userWorkflowMemory: InMemoryUserWorkflow;
+	private documentMemory: InMemoryDocument;
 
-  constructor() {
-    if (!InMemoryMemory.instance) {
-      InMemoryMemory.instance = this;
-    }
+	constructor() {
+		if (!InMemoryMemory.instance) {
+			InMemoryMemory.instance = this;
+		}
 
-    this.agentMemory = new InMemoryAgent();
-    this.threadMemory = new InMemoryThread();
-    this.intentMemory = new InMemoryIntent();
-    this.workflowTemplateMemory = new InMemoryWorkflowTemplate();
-    this.userWorkflowMemory = new InMemoryUserWorkflow();
-    this.documentMemory = new InMemoryDocument();
-  }
+		this.agentMemory = new InMemoryAgent();
+		this.threadMemory = new InMemoryThread();
+		this.intentMemory = new InMemoryIntent();
+		this.workflowTemplateMemory = new InMemoryWorkflowTemplate();
+		this.userWorkflowMemory = new InMemoryUserWorkflow();
+		this.documentMemory = new InMemoryDocument();
+	}
 
-  public async connect(): Promise<void> {
-    this.connected = true;
-  }
+	public async connect(): Promise<void> {
+		this.connected = true;
+	}
 
-  public async disconnect(): Promise<void> {
-    this.connected = false;
-  }
+	public async disconnect(): Promise<void> {
+		this.connected = false;
+	}
 
-  public isConnected(): boolean {
-    return this.connected;
-  }
+	public isConnected(): boolean {
+		return this.connected;
+	}
 
-  public getAgentMemory(): IAgentMemory {
-    return this.agentMemory;
-  }
+	public getAgentMemory(): IAgentMemory {
+		return this.agentMemory;
+	}
 
-  public getThreadMemory(): IThreadMemory {
-    return this.threadMemory;
-  }
+	public getThreadMemory(): IThreadMemory {
+		return this.threadMemory;
+	}
 
-  public getIntentMemory(): IIntentMemory {
-    return this.intentMemory;
-  }
+	public getIntentMemory(): IIntentMemory {
+		return this.intentMemory;
+	}
 
-  public getWorkflowTemplateMemory(): IWorkflowTemplateMemory {
-    return this.workflowTemplateMemory;
-  }
+	public getWorkflowTemplateMemory(): IWorkflowTemplateMemory {
+		return this.workflowTemplateMemory;
+	}
 
-  public getUserWorkflowMemory(): IUserWorkflowMemory {
-    return this.userWorkflowMemory;
-  }
+	public getUserWorkflowMemory(): IUserWorkflowMemory {
+		return this.userWorkflowMemory;
+	}
 
-  public getDocumentMemory(): IDocumentMemory {
-    return this.documentMemory;
-  }
+	public getDocumentMemory(): IDocumentMemory {
+		return this.documentMemory;
+	}
 }

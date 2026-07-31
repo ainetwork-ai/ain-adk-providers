@@ -1,5 +1,6 @@
 import type { PermissionResolver } from "@ainetwork/adk/types/authz";
 import type { DocumentFilter } from "@ainetwork/adk/types/document";
+import { loggers } from "@ainetwork/adk/utils/logger";
 import type { Action, Role, RoleStore } from "./types";
 
 interface Effective {
@@ -8,7 +9,12 @@ interface Effective {
 	assignments: { roleId: string; scope?: Record<string, string> }[];
 }
 
-function roleMatches(role: Role, resource: string, action: Action, category?: string): boolean {
+function roleMatches(
+	role: Role,
+	resource: string,
+	action: Action,
+	category?: string,
+): boolean {
 	if (role.resource !== resource && role.resource !== "*") return false;
 	if (!role.actions.includes(action)) return false;
 	// A category-constrained role only applies to documents of that category.
@@ -37,17 +43,39 @@ export class RoleResolver implements PermissionResolver {
 	private async load(principal: string): Promise<Effective> {
 		const cached = this.cache.get(principal);
 		if (cached && Date.now() - cached.at < this.ttl) return cached;
-		const [roles, assignments] = await Promise.all([
-			this.store.listRoles(),
-			this.store.listAssignmentsByEmail(principal),
-		]);
-		const eff: Effective = {
-			at: Date.now(),
-			roleById: new Map(roles.map((r) => [r.roleId, r])),
-			assignments: assignments.map((a) => ({ roleId: a.roleId, scope: a.scope })),
-		};
-		this.cache.set(principal, eff);
-		return eff;
+		try {
+			const [roles, assignments] = await Promise.all([
+				this.store.listRoles(),
+				this.store.listAssignmentsByEmail(principal),
+			]);
+			const eff: Effective = {
+				at: Date.now(),
+				roleById: new Map(roles.map((r) => [r.roleId, r])),
+				assignments: assignments.map((a) => ({
+					roleId: a.roleId,
+					scope: a.scope,
+				})),
+			};
+			this.cache.set(principal, eff);
+			return eff;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			// Stale-while-error: an expired cached Effective beats a hard 500 (or a
+			// blanket deny) during a DB blip — permissions rarely change that fast.
+			if (cached) {
+				loggers.agent.warn(
+					`[authz] role store load failed for "${principal}"; serving stale permissions: ${msg}`,
+				);
+				return cached;
+			}
+			// Nothing cached: fail closed (deny writes) instead of throwing so a
+			// store outage degrades to 403s, not 500s. Not cached, so the next
+			// request retries the store.
+			loggers.agent.error(
+				`[authz] role store load failed for "${principal}"; failing closed (deny): ${msg}`,
+			);
+			return { at: 0, roleById: new Map(), assignments: [] };
+		}
 	}
 
 	async can(
@@ -62,7 +90,11 @@ export class RoleResolver implements PermissionResolver {
 		const eff = await this.load(principal);
 		for (const a of eff.assignments) {
 			const role = eff.roleById.get(a.roleId);
-			if (!role || !roleMatches(role, resource, action as Action, attrs?.category)) continue;
+			if (
+				!role ||
+				!roleMatches(role, resource, action as Action, attrs?.category)
+			)
+				continue;
 			// Global role (no scope dimensions) → allowed.
 			if (!role.scope || role.scope.length === 0) return true;
 			// Scoped: every dimension the assignment specifies must equal the
@@ -85,7 +117,10 @@ export class RoleResolver implements PermissionResolver {
 		return false;
 	}
 
-	async listFilter(_principal: string, _resource: string): Promise<DocumentFilter[] | null> {
+	async listFilter(
+		_principal: string,
+		_resource: string,
+	): Promise<DocumentFilter[] | null> {
 		// Read is open by default: no row-level restriction on listing.
 		// (Write remains gated in can().)
 		return null;

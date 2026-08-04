@@ -1,4 +1,7 @@
-import { buildDocumentQuery, buildDocumentOrQuery } from "../implements/build-document-query";
+import {
+	buildDocumentOrQuery,
+	buildDocumentQuery,
+} from "../implements/build-document-query";
 
 describe("buildDocumentQuery", () => {
 	it("adds userId and scalar fields", () => {

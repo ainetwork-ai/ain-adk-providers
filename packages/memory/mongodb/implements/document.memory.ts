@@ -2,10 +2,12 @@ import type { IDocumentMemory } from "@ainetwork/adk/modules";
 import type {
 	Document,
 	DocumentFilter,
+	DocumentFilterSet,
+	DocumentListOptions,
 	DocumentSlot,
 } from "@ainetwork/adk/types/document";
 import { DocumentModel } from "../models/document.model";
-import { buildDocumentQuery } from "./build-document-query";
+import { buildDocumentOrQuery, buildDocumentQuery } from "./build-document-query";
 
 export type ExecuteWithRetryFn = <T>(
 	operation: () => Promise<T>,
@@ -120,6 +122,39 @@ export class MongoDBDocument implements IDocumentMemory {
 				.lean<Document[]>();
 			return documents;
 		}, "listDocuments()");
+	}
+
+	public async listDocumentsAny(
+		filters: DocumentFilterSet[],
+		options?: DocumentListOptions,
+	): Promise<Document[]> {
+		return this.executeWithRetry(async () => {
+			const timeout = this.getOperationTimeout();
+			let query = DocumentModel.find(buildDocumentOrQuery(filters))
+				.sort({ updatedAt: -1 })
+				.maxTimeMS(timeout);
+			if (options?.summary) {
+				query = query.select("-slots");
+			}
+			if (options?.offset) {
+				query = query.skip(options.offset);
+			}
+			if (options?.limit !== undefined) {
+				query = query.limit(options.limit);
+			}
+			return await query.lean<Document[]>();
+		}, "listDocumentsAny()");
+	}
+
+	public async countDocumentsAny(
+		filters: DocumentFilterSet[],
+	): Promise<number> {
+		return this.executeWithRetry(async () => {
+			const timeout = this.getOperationTimeout();
+			return await DocumentModel.countDocuments(
+				buildDocumentOrQuery(filters),
+			).maxTimeMS(timeout);
+		}, "countDocumentsAny()");
 	}
 
 	public async listAutoRefreshPendingDocuments(): Promise<Document[]> {

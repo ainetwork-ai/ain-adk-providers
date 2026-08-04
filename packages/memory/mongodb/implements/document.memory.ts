@@ -130,17 +130,17 @@ export class MongoDBDocument implements IDocumentMemory {
 	): Promise<Document[]> {
 		return this.executeWithRetry(async () => {
 			const timeout = this.getOperationTimeout();
-			let query = DocumentModel.find(buildDocumentOrQuery(filters))
+			const query = DocumentModel.find(buildDocumentOrQuery(filters))
 				.sort({ updatedAt: -1 })
 				.maxTimeMS(timeout);
 			if (options?.summary) {
-				query = query.select("-slots");
+				query.select("-slots");
 			}
 			if (options?.offset) {
-				query = query.skip(options.offset);
+				query.skip(options.offset);
 			}
 			if (options?.limit !== undefined) {
-				query = query.limit(options.limit);
+				query.limit(options.limit);
 			}
 			return await query.lean<Document[]>();
 		}, "listDocumentsAny()");

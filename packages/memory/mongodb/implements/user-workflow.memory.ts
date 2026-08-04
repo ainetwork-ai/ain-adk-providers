@@ -1,4 +1,5 @@
 import type { IUserWorkflowMemory } from "@ainetwork/adk/modules";
+import type { ListOptions } from "@ainetwork/adk/types/list";
 import type { UserWorkflow } from "@ainetwork/adk/types/memory";
 import { UserWorkflowModel } from "../models/user-workflow.model";
 
@@ -76,15 +77,33 @@ export class MongoDBUserWorkflow implements IUserWorkflowMemory {
 		}, "deleteUserWorkflow()");
 	}
 
-	public async listUserWorkflows(userId?: string): Promise<UserWorkflow[]> {
+	public async listUserWorkflows(
+		userId?: string,
+		options?: ListOptions,
+	): Promise<UserWorkflow[]> {
 		return this.executeWithRetry(async () => {
 			const timeout = this.getOperationTimeout();
-			const query = userId ? { userId } : {};
-			const workflows = await UserWorkflowModel.find(query)
-				.maxTimeMS(timeout)
-				.lean<UserWorkflow[]>();
-			return workflows;
+			const filter = userId ? { userId } : {};
+			let query = UserWorkflowModel.find(filter).maxTimeMS(timeout);
+			if (options?.limit !== undefined || options?.offset) {
+				query = query.sort({ updatedAt: -1 });
+				if (options.offset) {
+					query = query.skip(options.offset);
+				}
+				if (options.limit !== undefined) {
+					query = query.limit(options.limit);
+				}
+			}
+			return await query.lean<UserWorkflow[]>();
 		}, "listUserWorkflows()");
+	}
+
+	public async countUserWorkflows(userId?: string): Promise<number> {
+		return this.executeWithRetry(async () => {
+			const timeout = this.getOperationTimeout();
+			const filter = userId ? { userId } : {};
+			return await UserWorkflowModel.countDocuments(filter).maxTimeMS(timeout);
+		}, "countUserWorkflows()");
 	}
 
 	public async listActiveScheduledWorkflows(): Promise<UserWorkflow[]> {

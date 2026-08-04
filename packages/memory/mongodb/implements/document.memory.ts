@@ -130,8 +130,11 @@ export class MongoDBDocument implements IDocumentMemory {
 	): Promise<Document[]> {
 		return this.executeWithRetry(async () => {
 			const timeout = this.getOperationTimeout();
+			// documentId tiebreaker: equal updatedAt values (bulk workflow runs)
+			// must order identically across per-page queries, or documents can
+			// appear on two pages or on none.
 			const query = DocumentModel.find(buildDocumentOrQuery(filters))
-				.sort({ updatedAt: -1 })
+				.sort({ updatedAt: -1, documentId: -1 })
 				.maxTimeMS(timeout);
 			if (options?.summary) {
 				query.select("-slots");

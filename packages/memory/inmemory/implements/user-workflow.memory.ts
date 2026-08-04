@@ -81,8 +81,10 @@ export class InMemoryUserWorkflow implements IUserWorkflowMemory {
 			// mongodb provider stamps it via mongoose `timestamps: true`), so this
 			// sort degrades to insertion order for this provider — acceptable for
 			// a dev/testing provider.
-			workflows = [...workflows].sort((a, b) =>
-				(b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+			workflows = [...workflows].sort(
+				(a, b) =>
+					String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")) ||
+					b.workflowId.localeCompare(a.workflowId),
 			);
 			const start = options.offset ?? 0;
 			workflows = workflows.slice(

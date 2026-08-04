@@ -86,7 +86,7 @@ export class MongoDBUserWorkflow implements IUserWorkflowMemory {
 			const filter = userId ? { userId } : {};
 			let query = UserWorkflowModel.find(filter).maxTimeMS(timeout);
 			if (options?.limit !== undefined || options?.offset) {
-				query = query.sort({ updatedAt: -1 });
+				query = query.sort({ updatedAt: -1, workflowId: -1 });
 				if (options.offset) {
 					query = query.skip(options.offset);
 				}

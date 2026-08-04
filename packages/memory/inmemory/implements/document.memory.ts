@@ -148,7 +148,7 @@ export class InMemoryDocument implements IDocumentMemory {
 			}
 		}
 		let items = [...byId.values()].sort((a, b) =>
-			b.updatedAt.localeCompare(a.updatedAt),
+			String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")),
 		);
 		if (options?.limit !== undefined || options?.offset) {
 			const start = options?.offset ?? 0;

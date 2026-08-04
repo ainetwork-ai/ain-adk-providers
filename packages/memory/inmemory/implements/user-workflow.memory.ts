@@ -77,6 +77,10 @@ export class InMemoryUserWorkflow implements IUserWorkflowMemory {
 		}
 
 		if (options?.limit !== undefined || options?.offset) {
+			// In-memory-created workflows typically have no updatedAt (only the
+			// mongodb provider stamps it via mongoose `timestamps: true`), so this
+			// sort degrades to insertion order for this provider — acceptable for
+			// a dev/testing provider.
 			workflows = [...workflows].sort((a, b) =>
 				(b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
 			);

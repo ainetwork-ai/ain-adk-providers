@@ -1,10 +1,16 @@
-import type { DocumentFilter } from "@ainetwork/adk/types/document";
+import type {
+	DocumentFilter,
+	DocumentFilterSet,
+} from "@ainetwork/adk/types/document";
 
 /** Keys containing `$` or `.` could smuggle Mongo operators or path
  * traversal into the query, so they are skipped entirely. */
 function isSafeLabelKey(key: string): boolean {
 	return !key.includes("$") && !key.includes(".");
 }
+
+/** YYYY-MM-DD only — anything else (operators, other shapes) is dropped. */
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Builds the Mongo query object for listDocuments. Scalar label values match
  * exactly; array values use $in.
@@ -43,5 +49,32 @@ export function buildDocumentQuery(
 			// Any other shape (operator objects, numbers, ...) is dropped.
 		}
 	}
+	// Inclusive range over labels.date. Applied after the labels loop so a
+	// range always wins over an exact labels.date value from the same query.
+	const range: Record<string, string> = {};
+	if (typeof filter?.dateFrom === "string" && DATE_RE.test(filter.dateFrom)) {
+		range.$gte = filter.dateFrom;
+	}
+	if (typeof filter?.dateTo === "string" && DATE_RE.test(filter.dateTo)) {
+		range.$lte = filter.dateTo;
+	}
+	if (Object.keys(range).length > 0) {
+		query["labels.date"] = range;
+	}
 	return query;
+}
+
+/**
+ * Union (OR) of filter sets as one Mongo query, so skip/limit/count stay
+ * correct across RBAC scopes. Callers guarantee at least one set — an empty
+ * union would silently mean "match everything", so fail loudly instead.
+ */
+export function buildDocumentOrQuery(
+	filters: DocumentFilterSet[],
+): Record<string, unknown> {
+	if (filters.length === 0) {
+		throw new Error("buildDocumentOrQuery: empty filter sets");
+	}
+	const clauses = filters.map((s) => buildDocumentQuery(s.userId, s.filter));
+	return clauses.length === 1 ? clauses[0] : { $or: clauses };
 }

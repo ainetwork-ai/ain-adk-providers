@@ -10,7 +10,7 @@ export interface ResourceRouteOptions {
 	resource: string;
 	/** Route mount base for this resource, e.g. "/api/document". The byId routes
 	 * are derived as `${basePath}/:id`, `${basePath}/update/:id`,
-	 * `${basePath}/delete/:id`. */
+	 * `${basePath}/delete/:id`, `${basePath}/hide/:id`. */
 	basePath: string;
 	/** Loads an existing record's labels for byId (update/delete/read) authz.
 	 * Omit to gate only create (+ list); update/delete then fall back to the
@@ -118,6 +118,9 @@ export function buildResourceRouteRequirements(
 		const writePaths = [
 			updatePath,
 			`${basePath}/delete/:id`,
+			// Soft delete — same write gate as delete; the target's labels are
+			// loaded and checked identically.
+			`${basePath}/hide/:id`,
 			...(opts.byIdWriteSubpaths ?? []).map((sub) => `${basePath}/:id/${sub}`),
 		];
 		for (const path of writePaths) {

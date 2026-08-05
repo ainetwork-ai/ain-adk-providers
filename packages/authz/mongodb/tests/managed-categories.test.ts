@@ -222,6 +222,7 @@ describe("byId routes", () => {
 		);
 		expect(p).toContain("POST /api/document/update/:id");
 		expect(p).toContain("POST /api/document/delete/:id");
+		expect(p).toContain("POST /api/document/hide/:id");
 	});
 
 	it("derives byId paths from a custom basePath (e.g. workflow)", () => {

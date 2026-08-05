@@ -22,7 +22,9 @@ export function buildDocumentQuery(
 	userId: string | undefined,
 	filter?: DocumentFilter,
 ): Record<string, unknown> {
-	const query: Record<string, unknown> = {};
+	// Soft-deleted documents are invisible to every caller of this builder
+	// (list, count, OR-union) — absent field and false both pass $ne: true.
+	const query: Record<string, unknown> = { hidden: { $ne: true } };
 	if (userId) query.userId = userId;
 	if (typeof filter?.workflowId === "string" && filter.workflowId) {
 		query.workflowId = filter.workflowId;

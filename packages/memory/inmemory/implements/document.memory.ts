@@ -12,7 +12,10 @@ export class InMemoryDocument implements IDocumentMemory {
 	private userDocumentIndex: Map<string, Set<string>> = new Map();
 
 	public async getDocument(documentId: string): Promise<Document | undefined> {
-		return this.documents.get(documentId);
+		const document = this.documents.get(documentId);
+		// Hidden documents read as absent — soft delete (mongodb twin does the
+		// same via `hidden: { $ne: true }`).
+		return document?.hidden ? undefined : document;
 	}
 
 	public async createDocument(document: Document): Promise<Document> {
@@ -103,6 +106,8 @@ export class InMemoryDocument implements IDocumentMemory {
 		} else {
 			documents = Array.from(this.documents.values());
 		}
+
+		documents = documents.filter((d) => !d.hidden);
 
 		if (filter?.workflowId) {
 			documents = documents.filter((d) => d.workflowId === filter.workflowId);

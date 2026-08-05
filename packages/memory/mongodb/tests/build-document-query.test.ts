@@ -9,7 +9,12 @@ describe("buildDocumentQuery", () => {
 			workflowId: "w1",
 			source: "MANUAL" as any,
 		});
-		expect(q).toEqual({ userId: "u1", workflowId: "w1", source: "MANUAL" });
+		expect(q).toEqual({
+			hidden: { $ne: true },
+			userId: "u1",
+			workflowId: "w1",
+			source: "MANUAL",
+		});
 	});
 
 	it("uses $in for array label values", () => {
@@ -17,6 +22,7 @@ describe("buildDocumentQuery", () => {
 			labels: { category: "logbook", workplace: ["walkerhill", "seoul"] },
 		});
 		expect(q).toEqual({
+			hidden: { $ne: true },
 			"labels.category": "logbook",
 			"labels.workplace": { $in: ["walkerhill", "seoul"] },
 		});
@@ -24,12 +30,12 @@ describe("buildDocumentQuery", () => {
 
 	it("uses exact match for scalar label values", () => {
 		const q = buildDocumentQuery(undefined, { labels: { workplace: "seoul" } });
-		expect(q).toEqual({ "labels.workplace": "seoul" });
+		expect(q).toEqual({ hidden: { $ne: true }, "labels.workplace": "seoul" });
 	});
 
 	it("omits userId when undefined", () => {
 		const q = buildDocumentQuery(undefined, {});
-		expect(q).toEqual({});
+		expect(q).toEqual({ hidden: { $ne: true } });
 	});
 
 	describe("injection hardening", () => {
@@ -37,7 +43,7 @@ describe("buildDocumentQuery", () => {
 			const q = buildDocumentQuery(undefined, {
 				labels: { category: { $ne: "x" } as never },
 			});
-			expect(q).toEqual({});
+			expect(q).toEqual({ hidden: { $ne: true } });
 		});
 
 		it("skips label keys containing $ or .", () => {
@@ -48,21 +54,24 @@ describe("buildDocumentQuery", () => {
 					ok: "z",
 				} as never,
 			});
-			expect(q).toEqual({ "labels.ok": "z" });
+			expect(q).toEqual({ hidden: { $ne: true }, "labels.ok": "z" });
 		});
 
 		it("keeps only string elements of array label values", () => {
 			const q = buildDocumentQuery(undefined, {
 				labels: { category: ["a", { $ne: "b" }, 3] as never },
 			});
-			expect(q).toEqual({ "labels.category": { $in: ["a"] } });
+			expect(q).toEqual({
+				hidden: { $ne: true },
+				"labels.category": { $in: ["a"] },
+			});
 		});
 
 		it("drops array label values with no string elements", () => {
 			const q = buildDocumentQuery(undefined, {
 				labels: { category: [{ $ne: "b" }] as never },
 			});
-			expect(q).toEqual({});
+			expect(q).toEqual({ hidden: { $ne: true } });
 		});
 
 		it("drops non-string top-level filter fields (qs ?workflowId[$ne]=)", () => {
@@ -71,7 +80,7 @@ describe("buildDocumentQuery", () => {
 				threadId: { $gt: "" } as never,
 				source: { $ne: "" } as never,
 			});
-			expect(q).toEqual({});
+			expect(q).toEqual({ hidden: { $ne: true } });
 		});
 	});
 });
@@ -83,6 +92,7 @@ describe("date range", () => {
 			dateTo: "2026-08-31",
 		});
 		expect(q).toEqual({
+			hidden: { $ne: true },
 			"labels.date": { $gte: "2026-08-01", $lte: "2026-08-31" },
 		});
 	});
@@ -92,14 +102,17 @@ describe("date range", () => {
 			dateFrom: "20260801",
 			dateTo: "2026-08-31",
 		});
-		expect(q).toEqual({ "labels.date": { $lte: "2026-08-31" } });
+		expect(q).toEqual({
+			hidden: { $ne: true },
+			"labels.date": { $lte: "2026-08-31" },
+		});
 	});
 
 	it("drops operator smuggling in date bounds", () => {
 		const q = buildDocumentQuery(undefined, {
 			dateFrom: { $ne: "x" } as never,
 		});
-		expect(q).toEqual({});
+		expect(q).toEqual({ hidden: { $ne: true } });
 	});
 
 	it("date range wins over an exact labels.date filter", () => {
@@ -107,7 +120,10 @@ describe("date range", () => {
 			labels: { date: "2026-08-15" },
 			dateFrom: "2026-08-01",
 		});
-		expect(q).toEqual({ "labels.date": { $gte: "2026-08-01" } });
+		expect(q).toEqual({
+			hidden: { $ne: true },
+			"labels.date": { $gte: "2026-08-01" },
+		});
 	});
 });
 
@@ -116,7 +132,11 @@ describe("buildDocumentOrQuery", () => {
 		const q = buildDocumentOrQuery([
 			{ userId: "u1", filter: { source: "MANUAL" as never } },
 		]);
-		expect(q).toEqual({ userId: "u1", source: "MANUAL" });
+		expect(q).toEqual({
+			hidden: { $ne: true },
+			userId: "u1",
+			source: "MANUAL",
+		});
 	});
 
 	it("multiple sets → $or of per-set queries", () => {
@@ -125,7 +145,10 @@ describe("buildDocumentOrQuery", () => {
 			{ filter: { labels: { workplace: "seoul" } } },
 		]);
 		expect(q).toEqual({
-			$or: [{ userId: "u1" }, { "labels.workplace": "seoul" }],
+			$or: [
+				{ hidden: { $ne: true }, userId: "u1" },
+				{ hidden: { $ne: true }, "labels.workplace": "seoul" },
+			],
 		});
 	});
 

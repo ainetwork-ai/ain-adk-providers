@@ -31,7 +31,11 @@ export class MongoDBDocument implements IDocumentMemory {
 	public async getDocument(documentId: string): Promise<Document | undefined> {
 		return this.executeWithRetry(async () => {
 			const timeout = this.getOperationTimeout();
-			const document = await DocumentModel.findOne({ documentId })
+			const document = await DocumentModel.findOne({
+				documentId,
+				// Hidden documents read as absent (404 upstream) — soft delete.
+				hidden: { $ne: true },
+			})
 				.maxTimeMS(timeout)
 				.lean<Document>();
 			return document || undefined;
@@ -166,6 +170,7 @@ export class MongoDBDocument implements IDocumentMemory {
 			return await DocumentModel.find({
 				"autoRefresh.active": true,
 				"autoRefresh.completedAt": { $exists: false },
+				hidden: { $ne: true },
 			})
 				.maxTimeMS(timeout)
 				.lean<Document[]>();

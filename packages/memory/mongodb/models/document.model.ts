@@ -78,6 +78,12 @@ export const DocumentObjectSchema = new Schema(
 		editedManually: {
 			type: Boolean,
 		},
+		// Soft delete: excluded from every read path (get/list/count/
+		// auto-refresh). Declared so strict mode persists the $set; hard
+		// delete/restore happen in admin tooling, directly against Mongo.
+		hidden: {
+			type: Boolean,
+		},
 		createdAt: {
 			type: String,
 			required: true,
@@ -110,6 +116,7 @@ export interface DocumentDocument extends Document {
 	threadId?: string;
 	version: number;
 	editedManually?: boolean;
+	hidden?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }

@@ -1,4 +1,5 @@
 import type { IUserWorkflowMemory } from "@ainetwork/adk/modules";
+import type { ListOptions } from "@ainetwork/adk/types/list";
 import type { UserWorkflow } from "@ainetwork/adk/types/memory";
 
 export class InMemoryUserWorkflow implements IUserWorkflowMemory {
@@ -56,21 +57,47 @@ export class InMemoryUserWorkflow implements IUserWorkflowMemory {
 		}
 	}
 
-	public async listUserWorkflows(userId?: string): Promise<UserWorkflow[]> {
+	public async listUserWorkflows(
+		userId?: string,
+		options?: ListOptions,
+	): Promise<UserWorkflow[]> {
+		let workflows: UserWorkflow[];
 		if (userId) {
 			const userWorkflowIds = this.userWorkflowIndex.get(userId);
 			if (!userWorkflowIds) return [];
-			const workflows: UserWorkflow[] = [];
+			workflows = [];
 			for (const workflowId of userWorkflowIds) {
 				const workflow = this.workflows.get(workflowId);
 				if (workflow) {
 					workflows.push(workflow);
 				}
 			}
-			return workflows;
+		} else {
+			workflows = Array.from(this.workflows.values());
 		}
 
-		return Array.from(this.workflows.values());
+		if (options?.limit !== undefined || options?.offset) {
+			// In-memory-created workflows typically have no updatedAt (only the
+			// mongodb provider stamps it via mongoose `timestamps: true`), so this
+			// sort degrades to insertion order for this provider — acceptable for
+			// a dev/testing provider.
+			workflows = [...workflows].sort(
+				(a, b) =>
+					String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")) ||
+					b.workflowId.localeCompare(a.workflowId),
+			);
+			const start = options.offset ?? 0;
+			workflows = workflows.slice(
+				start,
+				options.limit !== undefined ? start + options.limit : undefined,
+			);
+		}
+		return workflows;
+	}
+
+	public async countUserWorkflows(userId?: string): Promise<number> {
+		if (!userId) return this.workflows.size;
+		return (await this.listUserWorkflows(userId)).length;
 	}
 
 	public async listActiveScheduledWorkflows(): Promise<UserWorkflow[]> {

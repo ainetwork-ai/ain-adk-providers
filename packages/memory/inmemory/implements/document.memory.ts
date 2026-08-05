@@ -2,6 +2,8 @@ import type { IDocumentMemory } from "@ainetwork/adk/modules";
 import type {
 	Document,
 	DocumentFilter,
+	DocumentFilterSet,
+	DocumentListOptions,
 	DocumentSlot,
 } from "@ainetwork/adk/types/document";
 
@@ -122,7 +124,56 @@ export class InMemoryDocument implements IDocumentMemory {
 				}),
 			);
 		}
+		if (filter?.dateFrom || filter?.dateTo) {
+			documents = documents.filter((d) => {
+				const date = d.labels?.date;
+				if (!date) return false;
+				if (filter.dateFrom && date < filter.dateFrom) return false;
+				if (filter.dateTo && date > filter.dateTo) return false;
+				return true;
+			});
+		}
 
 		return documents;
+	}
+
+	public async listDocumentsAny(
+		filters: DocumentFilterSet[],
+		options?: DocumentListOptions,
+	): Promise<Document[]> {
+		const byId = new Map<string, Document>();
+		for (const set of filters) {
+			for (const d of await this.listDocuments(set.userId, set.filter)) {
+				byId.set(d.documentId, d);
+			}
+		}
+		let items = [...byId.values()].sort(
+			(a, b) =>
+				String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")) ||
+				b.documentId.localeCompare(a.documentId),
+		);
+		if (options?.limit !== undefined || options?.offset) {
+			const start = options?.offset ?? 0;
+			items = items.slice(
+				start,
+				options?.limit !== undefined ? start + options.limit : undefined,
+			);
+		}
+		if (options?.summary) {
+			items = items.map(({ slots: _slots, ...rest }) => rest as Document);
+		}
+		return items;
+	}
+
+	public async countDocumentsAny(
+		filters: DocumentFilterSet[],
+	): Promise<number> {
+		const ids = new Set<string>();
+		for (const set of filters) {
+			for (const d of await this.listDocuments(set.userId, set.filter)) {
+				ids.add(d.documentId);
+			}
+		}
+		return ids.size;
 	}
 }

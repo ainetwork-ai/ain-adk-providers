@@ -1,4 +1,7 @@
-import { buildDocumentQuery } from "../implements/build-document-query";
+import {
+	buildDocumentOrQuery,
+	buildDocumentQuery,
+} from "../implements/build-document-query";
 
 describe("buildDocumentQuery", () => {
 	it("adds userId and scalar fields", () => {
@@ -70,5 +73,63 @@ describe("buildDocumentQuery", () => {
 			});
 			expect(q).toEqual({});
 		});
+	});
+});
+
+describe("date range", () => {
+	it("builds labels.date range from dateFrom/dateTo", () => {
+		const q = buildDocumentQuery(undefined, {
+			dateFrom: "2026-08-01",
+			dateTo: "2026-08-31",
+		});
+		expect(q).toEqual({
+			"labels.date": { $gte: "2026-08-01", $lte: "2026-08-31" },
+		});
+	});
+
+	it("drops malformed date bounds independently", () => {
+		const q = buildDocumentQuery(undefined, {
+			dateFrom: "20260801",
+			dateTo: "2026-08-31",
+		});
+		expect(q).toEqual({ "labels.date": { $lte: "2026-08-31" } });
+	});
+
+	it("drops operator smuggling in date bounds", () => {
+		const q = buildDocumentQuery(undefined, {
+			dateFrom: { $ne: "x" } as never,
+		});
+		expect(q).toEqual({});
+	});
+
+	it("date range wins over an exact labels.date filter", () => {
+		const q = buildDocumentQuery(undefined, {
+			labels: { date: "2026-08-15" },
+			dateFrom: "2026-08-01",
+		});
+		expect(q).toEqual({ "labels.date": { $gte: "2026-08-01" } });
+	});
+});
+
+describe("buildDocumentOrQuery", () => {
+	it("single set → plain query (no $or)", () => {
+		const q = buildDocumentOrQuery([
+			{ userId: "u1", filter: { source: "MANUAL" as never } },
+		]);
+		expect(q).toEqual({ userId: "u1", source: "MANUAL" });
+	});
+
+	it("multiple sets → $or of per-set queries", () => {
+		const q = buildDocumentOrQuery([
+			{ userId: "u1", filter: {} },
+			{ filter: { labels: { workplace: "seoul" } } },
+		]);
+		expect(q).toEqual({
+			$or: [{ userId: "u1" }, { "labels.workplace": "seoul" }],
+		});
+	});
+
+	it("throws on empty filter sets", () => {
+		expect(() => buildDocumentOrQuery([])).toThrow();
 	});
 });

@@ -20,6 +20,7 @@ import type {
 	ToolCallDelta,
 } from "@ainetwork/adk/types/stream";
 import { loggers } from "@ainetwork/adk/utils/logger";
+import { messageToPromptText } from "@ainetwork/adk/utils/message-content";
 import { AzureOpenAI as AzureOpenAIClient } from "openai";
 import type {
 	ChatCompletionMessageParam as CCMessageParam,
@@ -128,11 +129,13 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 					// Prefer the real query stashed in metadata when a display text was
 					// shown in its place (displayQuery), so multi-turn history carries
 					// the actual query the model saw on the first turn — not the short
-					// label. Falls back to the stored content otherwise.
+					// label. Falls back to the stored content otherwise, flattened via
+					// messageToPromptText: `parts` is `unknown[]` and rich/document
+					// messages hold objects, which this API rejects as `content`.
 					const content =
 						typeof message.metadata?.query === "string"
 							? message.metadata.query
-							: (message.content.parts[0] as string);
+							: messageToPromptText(message);
 					return {
 						role: this.getMessageRole(message.role),
 						content,

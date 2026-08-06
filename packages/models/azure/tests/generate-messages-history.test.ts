@@ -63,4 +63,44 @@ describe("AzureOpenAI.generateMessages history reconstruction", () => {
 		const messages = provider.generateMessages({ query: "다음 질문", thread });
 		expect(messages.some((m) => m.content === "평범한 질문입니다")).toBe(true);
 	});
+
+	// Regression: a workflow run persists { type: "rich", parts: [DocumentPart] }
+	// with metadata.documentId but no metadata.query. Passing that part object
+	// through as `content` made the API reject the whole request with
+	// 400 "Invalid type for 'messages[N].content'", breaking every later turn.
+	it("never emits an object content for a workflow document message", () => {
+		const provider = makeProvider();
+		const thread = {
+			messages: [
+				{
+					messageId: "m1",
+					role: "MODEL" as MessageObject["role"],
+					timestamp: 1,
+					content: {
+						type: "rich",
+						parts: [
+							{ type: "document", documentId: "doc-1", title: "7월 리포트" },
+						],
+					},
+					metadata: {
+						workflowId: "w1",
+						workflowRun: true,
+						documentId: "doc-1",
+					},
+				},
+			],
+		} as unknown as ThreadObject;
+
+		const messages = provider.generateMessages({
+			query: "이어서 질문",
+			thread,
+		});
+
+		for (const message of messages) {
+			expect(typeof message.content).toBe("string");
+		}
+		expect(messages.some((m) => String(m.content).includes("7월 리포트"))).toBe(
+			true,
+		);
+	});
 });

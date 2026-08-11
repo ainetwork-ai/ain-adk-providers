@@ -52,6 +52,18 @@ export const ScheduleRunSchema = new Schema(
 		slotResults: {
 			type: Schema.Types.Mixed,
 		},
+		// How the run derived its target slots (SLOT_REFRESH only): the
+		// document's slots, the requested allowlist, the submitted targets, and
+		// every excluded slot with its reason. Written before the slot jobs
+		// start, so an interrupted run still records what it planned. Mixed for
+		// the same reason as slotResults — nested arrays must survive $set.
+		targeting: {
+			type: Schema.Types.Mixed,
+		},
+		// Why a run finished "success" without submitting any slot job.
+		noopReason: {
+			type: String,
+		},
 		// TTL 앵커 (스토리지 내부 전용 — ADK ScheduleRun 타입에는 노출하지 않는다).
 		// 나머지 타임스탬프는 epoch ms Number라 TTL 인덱스를 걸 수 없어 Date로 둔다.
 		createdAt: {

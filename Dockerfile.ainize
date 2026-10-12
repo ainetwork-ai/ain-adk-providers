@@ -1,0 +1,34 @@
+# ainize build for ain-adk-providers — a library monorepo (no server). The build is the check:
+# install, build every package (lerna run build) and run the jest suite inside `docker build`, so a
+# broken build or failing test fails the deploy. The image then serves the README on $PORT.
+#
+# package.json overrides @ainetwork/adk to `file:../ain-adk` (a sibling checkout that is outside this
+# repository and therefore outside any build context), and pnpm-lock.yaml points at yet another path
+# (../ain-adk-v0). Neither exists here, so this image drops the override and resolves the published
+# @ainetwork/adk (^0.8.6, as every package declares) from npm, without the frozen lockfile.
+FROM node:24-slim AS build
+RUN npm install -g pnpm@10.33.0
+WORKDIR /app
+COPY . .
+RUN npm pkg delete pnpm.overrides \
+ && pnpm install --no-frozen-lockfile --config.confirmModulesPurge=false
+RUN pnpm run build && pnpm test
+RUN mkdir -p /r /site && cd /r && npm init -y >/dev/null && npm install --no-audit --no-fund marked@12.0.2
+COPY <<'EOF2' /r/readme.mjs
+// Render README.md (argv[2]) to a standalone HTML page (argv[3]); extra links from argv[4..] as "label=href".
+import { marked } from 'marked';
+import fs from 'node:fs';
+const [src, out, ...links] = process.argv.slice(2);
+const body = marked.parse(fs.readFileSync(src, 'utf8'));
+const extra = links.map((l) => { const [t, h] = l.split('='); return `<a href="${h}">${t}</a>`; }).join(' · ');
+const title = (body.match(/<h1[^>]*>(.*?)<\/h1>/) || [, 'README'])[1].replace(/<[^>]+>/g, '');
+fs.writeFileSync(out, `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:0 auto;padding:24px 16px;color:#1f2328}pre{background:#f6f8fa;padding:12px;overflow:auto}img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #ddd;padding:4px 8px}.bar{padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:16px}</style></head><body>${extra ? `<div class="bar">${extra}</div>` : ''}${body}</body></html>`);
+EOF2
+RUN cd /r && node /r/readme.mjs /app/README.md /site/index.html
+
+FROM busybox:1.36
+COPY --from=build /site /site
+USER nobody
+ENV PORT=8080
+EXPOSE 8080
+CMD ["sh", "-c", "exec httpd -f -v -p 0.0.0.0:${PORT} -h /site"]

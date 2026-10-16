@@ -64,6 +64,11 @@ export const ScheduleRunSchema = new Schema(
 		noopReason: {
 			type: String,
 		},
+		// Outcome of the post-run advice (SLOT_REFRESH with autoRefresh.advice
+		// only). Mixed: a discriminated union, and it must survive $set.
+		advice: {
+			type: Schema.Types.Mixed,
+		},
 		// TTL 앵커 (스토리지 내부 전용 — ADK ScheduleRun 타입에는 노출하지 않는다).
 		// 나머지 타임스탬프는 epoch ms Number라 TTL 인덱스를 걸 수 없어 Date로 둔다.
 		createdAt: {

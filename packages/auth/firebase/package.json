@@ -1,6 +1,6 @@
 {
   "name": "@ainetwork/adk-provider-auth-firebase",
-  "version": "0.8.6",
+  "version": "0.8.10",
   "author": "AI Network (https://ainetwork.ai)",
   "type": "module",
   "engines": {

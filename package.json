@@ -32,7 +32,7 @@
   "license": "MIT",
   "pnpm": {
     "overrides": {
-      "@ainetwork/adk": "file:../ain-adk"
+      "@ainetwork/adk": "file:../ain-adk-v1"
     }
   }
 }

@@ -33,9 +33,18 @@ export const MessageObjectSchema = new Schema(
 			enum: Object.values(MessageRole),
 			required: true,
 		},
+		// Legacy records carry `content`; canonical (schemaVersion 2) records
+		// carry top-level `parts`. Neither is required — the ADK normalizes both.
 		content: {
 			type: MessageContentObjectSchema,
-			required: true,
+		},
+		schemaVersion: {
+			type: Number,
+		},
+		parts: {
+			type: [Schema.Types.Mixed],
+			// Mongoose defaults arrays to []; a legacy record would then look canonical.
+			default: undefined,
 		},
 		timestamp: {
 			type: Number,
@@ -59,10 +68,12 @@ export interface MessageDocument extends Document {
 	threadId: string;
 	userId: string;
 	role: MessageRole;
-	content: {
+	content?: {
 		type: string;
 		parts: any[];
 	};
+	schemaVersion?: number;
+	parts?: any[];
 	timestamp: number;
 	createdAt: Date;
 	updatedAt: Date;

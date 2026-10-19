@@ -59,13 +59,20 @@ export class MongoDBThread implements IThreadMemory {
 				messages: [],
 			};
 			messages.forEach((message: MessageDocument) => {
-				threadObject.messages.push({
+				const base = {
 					messageId: message.messageId,
 					role: message.role as MessageRole,
-					content: message.content,
 					timestamp: message.timestamp,
 					metadata: message.metadata,
-				});
+				};
+				threadObject.messages.push(
+					message.schemaVersion === 2
+						? { ...base, schemaVersion: 2, parts: message.parts ?? [] }
+						: {
+								...base,
+								content: message.content ?? { type: "text", parts: [] },
+							},
+				);
 			});
 
 			return threadObject;
@@ -122,6 +129,8 @@ export class MongoDBThread implements IThreadMemory {
 						userId,
 						role: message.role,
 						content: message.content,
+						schemaVersion: message.schemaVersion,
+						parts: message.parts,
 						timestamp: message.timestamp,
 						metadata: message.metadata,
 					})),

@@ -2,6 +2,7 @@ import {
 	type AssistantToolCallTurn,
 	BaseModel,
 	type ModelFetchOptions,
+	type ModelGenerateMessagesParams,
 	type ToolResultMessage,
 } from "@ainetwork/adk/modules";
 import type {
@@ -9,11 +10,7 @@ import type {
 	FetchResponse,
 	ToolCall,
 } from "@ainetwork/adk/types/connector";
-import {
-	type MessageObject,
-	MessageRole,
-	type ThreadObject,
-} from "@ainetwork/adk/types/memory";
+import { type MessageObject, MessageRole } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
@@ -80,6 +77,9 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 			case MessageRole.USER:
 				return "user";
 			case MessageRole.MODEL:
+			// History TOOL messages carry no tool_call_id, so a "tool" turn
+			// would be rejected; replay them as assistant text.
+			case MessageRole.TOOL:
 				return "assistant";
 			case MessageRole.SYSTEM:
 				return "system";
@@ -114,11 +114,7 @@ export class AzureOpenAI extends BaseModel<CCMessageParam, ChatCompletionTool> {
 		});
 	}
 
-	generateMessages(params: {
-		query: string;
-		thread?: ThreadObject;
-		systemPrompt?: string;
-	}): CCMessageParam[] {
+	generateMessages(params: ModelGenerateMessagesParams): CCMessageParam[] {
 		const { query, thread, systemPrompt } = params;
 		const messages: CCMessageParam[] = !systemPrompt
 			? []

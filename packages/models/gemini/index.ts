@@ -2,6 +2,7 @@ import {
 	type AssistantToolCallTurn,
 	BaseModel,
 	type ModelFetchOptions,
+	type ModelGenerateMessagesParams,
 	type ToolResultMessage,
 } from "@ainetwork/adk/modules";
 import type {
@@ -9,11 +10,7 @@ import type {
 	FetchResponse,
 	ToolCall,
 } from "@ainetwork/adk/types/connector";
-import {
-	type MessageObject,
-	MessageRole,
-	type ThreadObject,
-} from "@ainetwork/adk/types/memory";
+import { type MessageObject, MessageRole } from "@ainetwork/adk/types/memory";
 import type {
 	LLMStream,
 	StreamChunk,
@@ -132,11 +129,7 @@ export class GeminiModel extends BaseModel<Content, FunctionDeclaration> {
 		};
 	}
 
-	generateMessages(params: {
-		query: string;
-		thread?: ThreadObject;
-		systemPrompt?: string;
-	}): Content[] {
+	generateMessages(params: ModelGenerateMessagesParams): Content[] {
 		const { query, thread, systemPrompt } = params;
 		const messages: Content[] = !systemPrompt
 			? []

@@ -103,4 +103,36 @@ describe("AzureOpenAI.generateMessages history reconstruction", () => {
 			true,
 		);
 	});
+
+	// Regression: the ADK hands providers normalized (schemaVersion 2) threads;
+	// history turns used to flatten to "".
+	it("flattens canonical history messages, including TOOL role", () => {
+		const provider = makeProvider();
+		const thread = {
+			messages: [
+				{
+					messageId: "m1",
+					role: "USER",
+					timestamp: 1,
+					schemaVersion: 2,
+					parts: [{ kind: "text", text: "첫 질문" }],
+				},
+				{
+					messageId: "m2",
+					role: "TOOL",
+					timestamp: 2,
+					schemaVersion: 2,
+					parts: [{ kind: "text", text: "도구 결과" }],
+				},
+			],
+		} as unknown as ThreadObject;
+
+		const messages = provider.generateMessages({ query: "다음", thread });
+
+		expect(messages).toEqual([
+			{ role: "user", content: "첫 질문" },
+			{ role: "assistant", content: "도구 결과" },
+			{ role: "user", content: "다음" },
+		]);
+	});
 });
